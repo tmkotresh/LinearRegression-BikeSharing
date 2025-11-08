@@ -1,182 +1,84 @@
-# BoomBikes Bike Sharing Demand Prediction
-> A comprehensive linear regression analysis to predict bike-sharing demand for post-pandemic recovery strategy.
+# BoomBikes Linear Regression Analysis
 
-## Table of Contents
-* [General Info](#general-information)
-* [Technologies Used](#technologies-used)
-* [Conclusions](#conclusions)
-* [Acknowledgements](#acknowledgements)
+This project analyzes bike sharing data to predict daily bike demand using linear regression.
 
-<!-- You can include any other section that is pertinent to your problem -->
+## Problem Statement
 
-## General Information
-**Project Overview:**
-This project develops a multiple linear regression model to predict daily bike rental demand for BoomBikes, a US bike-sharing provider, to support their post-pandemic recovery strategy.
+BoomBikes is a bike-sharing company that has faced revenue challenges due to COVID-19. They want to understand what factors affect bike demand so they can plan better for when things get back to normal.
 
-**Background:**
-BoomBikes has experienced significant revenue declines due to the COVID-19 pandemic. The company seeks to understand the factors influencing bike-sharing demand to prepare for market recovery and accelerate revenue growth once lockdown restrictions are lifted and economic conditions improve.
+The company wants to know:
+- Which factors are most important for predicting bike demand?
+- How can they use this information to make business decisions?
 
-**Business Problem:**
-The primary business challenge is to identify which variables significantly impact shared bike demand and quantify their effects. This understanding will enable BoomBikes to:
-- Optimize fleet capacity and distribution
-- Implement dynamic pricing strategies  
-- Plan seasonal operations effectively
-- Make data-driven decisions for market recovery
-- Gain competitive advantage through superior demand forecasting
+## Dataset
 
-**Dataset Information:**
-The analysis uses a comprehensive dataset containing daily bike rental records across the American market from 2018-2019, including:
-- **730 daily records** spanning two years
-- **Weather variables:** temperature, humidity, windspeed, weather conditions
-- **Temporal variables:** season, month, weekday, year, holidays
-- **Usage data:** casual users, registered users, and total count
-- **Target variable:** `cnt` (total daily bike rentals)
+The dataset contains daily bike sharing data with information about:
+- Weather conditions (temperature, humidity, wind speed)
+- Time factors (season, month, year, working day)
+- Bike rental counts (casual users, registered users, total)
 
-**Key Dataset Features:**
-- `season`: 1=Spring, 2=Summer, 3=Fall, 4=Winter
-- `weathersit`: 1=Clear, 2=Mist, 3=Light Rain/Snow, 4=Heavy Rain/Snow  
-- `temp`: Normalized temperature in Celsius
-- `atemp`: Normalized feeling temperature
-- `hum`: Normalized humidity
-- `windspeed`: Normalized wind speed
-- `workingday`: 1=Working day, 0=Weekend/Holiday
+## My Approach
 
-<!-- You don't have to answer all the questions - just the ones relevant to your project. -->
+I followed these steps to solve the problem:
 
-## Conclusions
-**Key Business Insights from Linear Regression Analysis:**
+1. **Data Loading**: Imported the day.csv file and checked for any data quality issues
+2. **Data Understanding**: Explored the data to understand patterns and relationships
+3. **Data Preparation**: Converted categorical variables and created dummy variables
+4. **Train-Test Split**: Split data into 70% training and 30% testing
+5. **Feature Scaling**: Used StandardScaler to normalize the features
+6. **Feature Selection**: Used RFE (Recursive Feature Elimination) to find the best features
+7. **Model Building**: Built linear regression model using scikit-learn
+8. **Model Validation**: Checked assumptions and evaluated performance
+9. **Business Insights**: Interpreted results for practical business use
 
-**1. Weather Impact Analysis:**
-- Temperature is the strongest weather predictor (correlation: 0.627)
-- Clear weather conditions drive 24% higher demand compared to rainy conditions
-- Light rain/snow reduces demand by approximately 1,900 bikes/day
-- Weather-responsive operations can optimize fleet utilization by 15-20%
+## Key Findings
 
-**2. Seasonal Demand Patterns:**
-- Fall season shows peak demand (5,644 bikes/day average)
-- Spring exhibits lowest demand (2,604 bikes/day average) 
-- Seasonal variation spans 3,040 bikes/day between peak and trough
-- Seasonal capacity planning can improve resource allocation efficiency by 30%
+### Model Performance
+- **R² Score: 0.836** - The model explains 83.6% of variation in bike demand
+- **RMSE: ±804 bikes** - Average prediction error
+- The model performs well and is reliable for forecasting
 
-**3. Growth Trajectory Validation:**
-- Strong year-over-year growth: 46.7% increase from 2018 to 2019
-- The `yr` variable is a significant predictor, supporting continued market expansion
-- Growth momentum provides confidence for fleet expansion investments
-- Market adoption trend indicates sustainable business model viability
+### Important Factors (Top 3)
+1. **Year (2019 vs 2018)**: Being in 2019 increases demand by ~1974 bikes/day
+2. **Temperature**: Higher temperatures increase bike demand significantly  
+3. **Weather Conditions**: Light rain/snow decreases demand by ~1901 bikes/day
 
-**4. Model Performance Excellence:**
-- Final model achieves R² = 0.8365 (explains 83.7% of demand variation)
-- Prediction accuracy: ±856 bikes/day (RMSE)
-- Mean Absolute Percentage Error: 18.2%
-- Model uses 15 optimized features selected through RFE (Recursive Feature Elimination)
+### Business Insights
+- **Seasonal Patterns**: Fall is the best season (5,644 bikes/day), Spring is lowest (2,604 bikes/day)
+- **Weather Impact**: Clear weather drives highest demand (4,876 bikes/day)
+- **Growth Trend**: 47% growth from 2018 to 2019 shows strong business recovery
+- **Temperature Effect**: Temperature has 0.627 correlation with demand - strongest numerical predictor
 
-**5. Statistical Validation Success:**
-- All 4 linear regression assumptions validated through comprehensive testing
-- No concerning multicollinearity detected (all VIF values < 5)
-- Residual analysis confirms model reliability and statistical validity
-- Durbin-Watson test confirms independence (DW = 2.034)
+## Technical Details
 
-**6. Feature Importance Hierarchy:**
-- **Temperature (temp):** Primary demand driver with highest positive impact
-- **Year (yr):** Captures growth trend and market maturation  
-- **Weather conditions:** Critical for daily operational planning
-- **Seasonal factors:** Essential for medium-term capacity planning
-- **Working day patterns:** Important for weekly resource allocation
+### Libraries Used
+- pandas, numpy: Data manipulation
+- matplotlib, seaborn: Data visualization
+- scikit-learn: Machine learning (LinearRegression, RFE, StandardScaler)
+- statsmodels: Statistical analysis and detailed model summary
 
-**7. Strategic Business Recommendations:**
-- Implement temperature-based dynamic pricing and fleet positioning
-- Scale operations by 25% during fall peak season
-- Develop weather alert system for proactive demand management
-- Plan maintenance and expansion during spring low-demand period
-- Leverage 47% growth trend for investor confidence and expansion funding
+### Model Specifications
+- **Algorithm**: Multiple Linear Regression
+- **Feature Selection**: RFE with 15 optimal features
+- **Preprocessing**: StandardScaler for feature normalization
+- **Validation**: Train-test split with basic assumption checking
 
-<!-- You don't have to answer all the questions - just the ones relevant to your project. -->
+## Files in This Project
 
-## Technologies Used
-**Core Data Science Stack:**
-- pandas - version 1.5.3 (Data manipulation and analysis)
-- numpy - version 1.24.3 (Numerical computing and array operations)
-- matplotlib - version 3.7.1 (Basic plotting and visualization)
-- seaborn - version 0.12.2 (Advanced statistical visualizations)
+- `BikeSharing_LinearRegression.ipynb`: Main analysis notebook with all code and results
+- `day.csv`: Original dataset with daily bike sharing data
+- `Linear_Regression_Subjective_Answers.pdf`: Answers to assignment questions
+- `README.md`: This overview file
 
-**Machine Learning Framework:**
-- scikit-learn - version 1.2.2 (Machine learning algorithms and utilities)
-  - `LinearRegression` - Primary modeling algorithm
-  - `train_test_split` - Data splitting functionality  
-  - `RFE` - Recursive Feature Elimination for optimal feature selection
-  - `StandardScaler` - Feature scaling and normalization
-  - `r2_score, mean_absolute_error, mean_squared_error` - Model evaluation metrics
+## How to Run
 
-**Statistical Analysis:**
-- statsmodels - version 0.14.0 (Advanced statistical modeling)
-  - `OLS` - Ordinary Least Squares regression with detailed statistics
-  - `variance_inflation_factor` - Multicollinearity detection
-  - `durbin_watson` - Independence assumption testing
-  - `het_breuschpagan` - Homoscedasticity testing
-- scipy - version 1.10.1 (Scientific computing and statistical tests)
-  - `stats.shapiro` - Normality testing
-  - `stats.probplot` - Q-Q plots for assumption validation
-  - `stats.f_oneway` - ANOVA testing for categorical variables
+1. Make sure you have Python with pandas, numpy, matplotlib, seaborn, and scikit-learn installed
+2. Place the `day.csv` file in the same directory as the notebook
+3. Run all cells in the Jupyter notebook from top to bottom
+4. The analysis will generate visualizations and model results
 
-**Development Environment:**
-- jupyter - version 1.0.0 (Interactive notebook environment)
-- ipykernel - version 6.22.0 (Python kernel for Jupyter notebooks)
+## Results Summary
 
-**Key Implementation Approach:**
-- **SKLearn Linear Regression** as primary modeling framework
-- **Statsmodels** for detailed statistical analysis and assumption validation  
-- **Seaborn** for professional statistical visualizations throughout analysis
-- **RFE (Recursive Feature Elimination)** for optimal feature selection
-- **StandardScaler** for feature scaling after train-test split
+The linear regression model successfully identifies the key drivers of bike sharing demand and provides BoomBikes with actionable insights for their business recovery strategy. The model shows that weather conditions, seasonal patterns, and the overall growth trend are the most important factors to consider when planning operations and fleet management.
 
-<!-- As the libraries versions keep on changing, it is recommended to mention the version of library used in this project -->
-
-## Acknowledgements
-**Educational Foundation:**
-- This project was developed as part of a Machine Learning and Statistics curriculum focusing on practical application of linear regression techniques in business contexts.
-
-**Data Source:**
-- Dataset used for this analysis is based on the Capital Bikeshare system data, adapted for educational purposes.
-- Original research citation: Fanaee-T, Hadi, and Gama, Joao, "Event labeling combining ensemble detectors and background knowledge", Progress in Artificial Intelligence (2013): pp. 1-15, Springer Berlin Heidelberg.
-
-**Statistical Methodology:**
-- Linear regression implementation follows industry best practices and academic statistical standards.
-- Assumption validation techniques based on established econometric and statistical literature.
-- Feature selection methodology inspired by modern machine learning practices.
-
-**Technical References:**
-- Scikit-learn documentation for machine learning implementation standards
-- Statsmodels documentation for statistical analysis best practices
-- Seaborn gallery for professional data visualization techniques
-
-**Business Application:**
-- Problem formulation inspired by real-world bike-sharing industry challenges during the COVID-19 pandemic.
-- Strategic recommendations developed using data-driven business analysis frameworks.
-- Solution designed to address practical operational and strategic decision-making needs.
-
-**Special Recognition:**
-- Comprehensive approach integrates both technical excellence and business practicality.
-- Analysis demonstrates the application of statistical theory to solve real business problems.
-- Implementation showcases professional data science workflow and best practices.
-
-## Contact
-Created by [https://github.com/tmkotresh or tmkotresh@gmail.com] - feel free to contact me!
-
-**Project Repository Structure:**
-```
-bike-sharing-demand-prediction/
-├── BikeSharing_LinearRegression.ipynb          # Main analysis notebook
-├── Linear_Regression_Subjective_Answers.pdf   # Detailed theoretical answers
-├── README.md                                   # Project documentation
-
-```
-
----
-
-**This project demonstrates the practical application of linear regression for business problem-solving, combining statistical rigor with actionable business intelligence for data-driven decision making in the bike-sharing industry.**
-
-<!-- Optional -->
-<!-- ## License -->
-<!-- This project is open source and available under the [... License](). -->
-
-<!-- You don't have to include all sections - just the one's relevant to your project -->
+The analysis demonstrates that bike sharing demand is highly predictable using basic weather and temporal factors, giving BoomBikes a solid foundation for data-driven decision making.

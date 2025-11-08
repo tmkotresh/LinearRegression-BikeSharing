@@ -167,22 +167,9 @@ Created by [https://github.com/tmkotresh or tmkotresh@gmail.com] - feel free to 
 bike-sharing-demand-prediction/
 ├── BikeSharing_LinearRegression.ipynb          # Main analysis notebook
 ├── Linear_Regression_Subjective_Answers.pdf   # Detailed theoretical answers
-├── day.csv                                     # Dataset
 ├── README.md                                   # Project documentation
-└── requirements.txt                            # Dependencies (optional)
+
 ```
-
-**Key Deliverables:**
-- ✅ **Jupyter Notebook:** Complete linear regression analysis with business insights
-- ✅ **Subjective Questions PDF:** Comprehensive theoretical and practical answers  
-- ✅ **README Documentation:** Professional project overview and results summary
-- ✅ **Dataset:** Clean, analysis-ready bike-sharing data
-
-**Implementation Highlights:**
-- Professional statistical analysis meeting academic and industry standards
-- Comprehensive assumption validation using both visual and statistical methods
-- Business-focused insights with actionable strategic recommendations
-- Complete evaluation criteria compliance with detailed documentation
 
 ---
 

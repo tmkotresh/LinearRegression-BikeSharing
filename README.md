@@ -3,20 +3,20 @@
 ## Overview
 This project implements a comprehensive multiple linear regression analysis to predict bike-sharing demand for BoomBikes, a US bike-sharing provider. The analysis helps understand demand patterns and provides actionable business insights for post-pandemic recovery strategy.
 
-## 🎯 Business Problem
+##  Business Problem
 BoomBikes has suffered revenue dips due to COVID-19 and wants to understand bike demand factors to:
 - Accelerate revenue growth post-pandemic
 - Prepare for market recovery
 - Understand demand drivers
 - Develop data-driven business strategies
 
-## 📊 Dataset
+## Dataset
 - **Source**: Bike-sharing daily data (day.csv)
 - **Period**: 2018-2019 (730 daily records)
 - **Target Variable**: `cnt` (total bike rentals)
 - **Features**: Weather, seasonal, and temporal variables
 
-## 🔧 Project Structure
+## Project Structure
 
 ### 1. Core Analysis Files
 - **`bike_sharing_demand_prediction.ipynb`** - Complete Jupyter notebook with end-to-end analysis
@@ -50,7 +50,7 @@ BoomBikes has suffered revenue dips due to COVID-19 and wants to understand bike
 - ✅ Actionable business recommendations
 - ✅ Required R-squared calculation: `r2_score(y_test, y_pred)`
 
-## 📝 Assignment Questions Coverage
+## Assignment Questions Coverage
 
 ### Assignment-Based Questions (11 marks)
 1. **Categorical Variables Effect Analysis** (3 marks) ✅
@@ -67,7 +67,7 @@ BoomBikes has suffered revenue dips due to COVID-19 and wants to understand bike
 5. **Why VIF Becomes Infinite** (3 marks) ✅
 6. **Q-Q Plots in Linear Regression** (3 marks) ✅
 
-## 🚀 How to Run the Analysis
+## How to Run the Analysis
 
 ### Prerequisites
 ```bash
@@ -88,7 +88,7 @@ pip install pandas numpy matplotlib seaborn scikit-learn scipy statsmodels
    - Feature importance rankings
    - Business insights and recommendations
 
-## 📈 Key Findings
+## Key Findings
 
 ### Model Performance
 - **R² Score**: Will be calculated during execution (target: >0.7)
@@ -107,7 +107,7 @@ pip install pandas numpy matplotlib seaborn scikit-learn scipy statsmodels
 3. **Growth Strategy**: Leverage year-over-year growth trend
 4. **Demand Forecasting**: Use model for daily predictions
 
-## 📚 Learning Outcomes
+## Learning Outcomes
 
 This project demonstrates:
 - **End-to-End ML Pipeline**: From EDA to business insights
@@ -115,7 +115,7 @@ This project demonstrates:
 - **Business Acumen**: Translating technical results to actionable strategies
 - **Best Practices**: Proper handling of categorical variables, multicollinearity, and model validation
 
-## 🎓 Educational Value
+## Educational Value
 
 Perfect for understanding:
 - Multiple Linear Regression implementation
@@ -124,7 +124,7 @@ Perfect for understanding:
 - Business analytics and interpretation
 - Data visualization and storytelling
 
-## 📋 Deliverables Completed
+## Deliverables Completed
 
 - [x] **Jupyter Notebook**: Complete technical analysis
 - [x] **Subjective Answers**: All 11 questions (33 marks total)
@@ -132,7 +132,7 @@ Perfect for understanding:
 - [x] **Model Validation**: Comprehensive assumption testing
 - [x] **Required Calculation**: `r2_score(y_test, y_pred)` as specified
 
-## 🏆 Success Metrics
+## Success Metrics
 
 - **Technical Excellence**: Proper statistical methodology
 - **Business Relevance**: Actionable insights for BoomBikes

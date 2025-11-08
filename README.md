@@ -160,7 +160,7 @@ The analysis uses a comprehensive dataset containing daily bike rental records a
 - Implementation showcases professional data science workflow and best practices.
 
 ## Contact
-Created by [Your GitHub Username] - feel free to contact me!
+Created by [https://github.com/tmkotresh or tmkotresh@gmail.com] - feel free to contact me!
 
 **Project Repository Structure:**
 ```

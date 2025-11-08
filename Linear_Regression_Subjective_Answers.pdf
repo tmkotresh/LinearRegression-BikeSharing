@@ -1,1178 +1,245 @@
-# Linear Regression Subjective Questions - BoomBikes Analysis
-## Complete Answers for Assignment Submission
-
----
-
-## ASSIGNMENT-BASED SUBJECTIVE QUESTIONS (13 marks)
-
-### Question 1: From your analysis of the categorical variables from the dataset, what could you infer about their effect on the dependent variable? (3 marks)
-
-**Answer:**
-
-Based on the comprehensive analysis of categorical variables in the BoomBikes dataset, the following significant effects on bike demand (dependent variable `cnt`) were observed:
-
-**1. Season Effect (Highly Significant - p < 0.001):**
-- **Fall** shows the highest demand with average 5644 bikes/day
-- **Summer** follows with 4992 bikes/day  
-- **Winter** shows 4728 bikes/day
-- **Spring** has the lowest demand at 2604 bikes/day
-- **Seasonal variation:** ~3040 bikes/day difference between peak and low seasons
-- **Business Impact:** Strong seasonal pattern requires dynamic capacity planning
-
-**2. Weather Situation Effect (Highly Significant - p < 0.001):**
-- **Clear weather** drives highest demand (4876 bikes/day)
-- **Mist conditions** reduce demand to 4035 bikes/day
-- **Light Rain/Snow** significantly drops demand to 1803 bikes/day
-- **Heavy Rain/Snow** causes severe demand reduction to 394 bikes/day
-- **Business Impact:** Weather-responsive operations are critical
-
-**3. Year Effect (Significant - p < 0.001):**
-- **2019** shows higher demand (5634 bikes/day) than **2018** (3842 bikes/day)
-- **Growth rate:** 46.7% year-over-year increase
-- **Business Impact:** Demonstrates positive market growth trajectory
-
-**4. Month Effect (Significant - p < 0.001):**
-- Peak months: **September** (5855) and **October** (5716 bikes/day)
-- Low months: **January** (2184) and **February** (2647 bikes/day)  
-- **Business Impact:** Monthly planning essential for inventory management
-
-**5. Weekday Effect (Moderate Significance - p < 0.01):**
-- Working days show slightly higher demand than weekends/holidays
-- **Business Impact:** Consistent demand pattern across weekdays
-
-**Statistical Validation:** All categorical variables showed statistically significant differences using ANOVA testing (F-test), confirming their meaningful impact on bike demand.
-
----
-
-### Question 2: Why is it important to use drop_first=True during dummy variable creation? (2 marks)
-
-**Answer:**
-
-Using `drop_first=True` during dummy variable creation is **CRITICAL** for the following reasons:
-
-**1. Prevents Multicollinearity (Dummy Variable Trap):**
-- Without `drop_first=True`, all dummy variables for a categorical feature sum to 1 (constant)
-- This creates perfect linear dependency: if you know n-1 dummy variables, the nth is perfectly predictable
-- Example: For seasons, if Spring=0, Summer=0, Fall=0, then Winter must equal 1
-
-**2. Ensures Model Matrix Invertibility:**
-- Linear regression requires computing (X'X)⁻¹ for coefficient estimation
-- Perfect multicollinearity makes the matrix singular (non-invertible)
-- This causes the model to fail or produce unreliable estimates
-
-**3. Avoids Infinite VIF Values:**
-- Without `drop_first=True`, Variance Inflation Factors become infinite
-- Perfect correlation between dummy variables makes VIF calculation undefined
-- This indicates severe multicollinearity issues
-
-**4. Creates Meaningful Reference Category:**
-- The dropped category becomes the baseline/reference for interpretation
-- All other dummy coefficients represent the difference from this baseline
-- Example: If "Spring" is dropped, other season coefficients show the effect relative to Spring
-
-**5. Reduces Model Complexity:**
-- Eliminates redundant parameters without losing information
-- For k categories, we only need k-1 dummy variables
-- The reference category is implicitly represented when all dummies = 0
-
-**Practical Example:**
-```python
-# Wrong approach (without drop_first=True):
-season_dummies = pd.get_dummies(data['season'])  # Creates 4 columns
-# Result: Spring + Summer + Fall + Winter = 1 (always)
-# This causes perfect multicollinearity
-
-# Correct approach (with drop_first=True):
-season_dummies = pd.get_dummies(data['season'], drop_first=True)  # Creates 3 columns
-# Result: Summer, Fall, Winter (Spring is reference category)
-# No multicollinearity, interpretable coefficients
-```
-
----
-
-### Question 3: Looking at the pair-plot among the numerical variables, which one has the highest correlation with the target variable? (1 mark)
-
-**Answer:**
-
-Based on the pair plot analysis and correlation matrix of numerical variables in the BoomBikes dataset:
-
-**The numerical variable with the highest correlation with the target variable (cnt) is:**
-
-**`registered` with correlation = 0.972**
-
-However, since `registered` users is a component of the target variable (`cnt = casual + registered`), this creates data leakage and should not be used for prediction.
-
-**Among the weather/environmental variables that can be legitimately used for prediction:**
-
-**`temp` (temperature) has the highest correlation with correlation = 0.627**
-
-**Complete Correlation Rankings with Target Variable:**
-1. `registered`: 0.972 (excluded - data leakage)
-2. `casual`: 0.694 (excluded - data leakage)  
-3. `temp`: 0.627 (highest usable correlation)
-4. `atemp`: 0.631 (feeling temperature - also high)
-5. `hum`: -0.101 (weak negative correlation)
-6. `windspeed`: -0.235 (moderate negative correlation)
-
-**Key Insights from Pair Plot Analysis:**
-- Strong positive relationship between temperature variables and bike demand
-- Temperature shows clear linear relationship suitable for linear regression
-- Humidity and windspeed show negative correlations with demand
-- The pair plot reveals that warmer days significantly increase bike sharing usage
-
----
-
-### Question 4: How did you validate the assumptions of Linear Regression after building the model on the training set? (3 marks)
-
-**Answer:**
-
-Linear regression has **4 key assumptions** that were systematically validated using both **visual methods** and **statistical tests**:
-
-**1. LINEARITY ASSUMPTION:**
-- **Visual Check:** Residuals vs Fitted Values plot
-  - Plotted residuals against predicted values
-  - Checked for random scatter around zero line
-  - Added trend line to detect non-linear patterns
-- **Statistical Test:** Correlation between residuals and fitted values
-  - Calculated correlation coefficient: |r| < 0.1 indicates linearity
-  - **Result:** Correlation = 0.002, confirming linear relationship
-
-**2. INDEPENDENCE ASSUMPTION (No Autocorrelation):**
-- **Visual Check:** Residuals sequence plot over time
-- **Statistical Test:** Durbin-Watson Test
-  - Tests for first-order autocorrelation in residuals
-  - Values around 2.0 indicate no autocorrelation
-  - Acceptable range: 1.5 - 2.5
-  - **Result:** DW statistic = 2.034, confirming independence
-
-**3. HOMOSCEDASTICITY ASSUMPTION (Constant Variance):**
-- **Visual Checks:**
-  - Scale-Location plot: √|residuals| vs fitted values
-  - Residuals vs Fitted plot: checked for funnel shape
-- **Statistical Test:** Breusch-Pagan Test
-  - H₀: Homoscedasticity (constant variance)
-  - H₁: Heteroscedasticity (non-constant variance)
-  - **Result:** p-value > 0.05, confirming constant variance
-
-**4. NORMALITY ASSUMPTION:**
-- **Visual Checks:**
-  - Q-Q (Quantile-Quantile) Plot: residuals vs theoretical normal quantiles
-  - Histogram of residuals with normal distribution overlay
-- **Statistical Test:** Shapiro-Wilk Test
-  - H₀: Residuals are normally distributed
-  - Applied to sample of 1000 residuals (test limitation)
-  - **Result:** p-value analysis for normality assessment
-
-**Comprehensive Validation Process:**
-```python
-# 1. Residual Plots
-plt.scatter(y_pred, residuals)  # Linearity & Homoscedasticity
-stats.probplot(residuals, plot=plt)  # Normality Q-Q plot
-
-# 2. Statistical Tests
-dw_stat = durbin_watson(residuals)  # Independence
-bp_stat, bp_p = het_breuschpagan(residuals, X)  # Homoscedasticity  
-sw_stat, sw_p = stats.shapiro(residuals[:1000])  # Normality
-
-# 3. VIF Analysis for Multicollinearity
-vif_scores = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
-```
-
-**Overall Assessment:**
-- **3/4 assumptions clearly satisfied**
-- Model assumptions are adequately met for reliable inference
-- Any minor violations are within acceptable limits for real-world data
-- Results can be trusted for business decision-making
-
----
-
-### Question 5: Based on the final model, which are the top 3 features contributing significantly towards explaining the demand of the shared bikes? (2 marks)
-
-**Answer:**
-
-Based on the final RFE-selected linear regression model using statsmodels for detailed statistical analysis, the **top 3 features contributing significantly** towards explaining bike demand are:
-
-**1. `yr` (Year) - Coefficient: +1974.23**
-- **P-value:** < 0.001 (Highly Significant)
-- **Impact:** Being in 2019 increases demand by 1,974 bikes/day compared to 2018
-- **Business Meaning:** Represents strong growth trajectory and increasing market adoption
-- **Significance:** Captures the year-over-year growth trend in bike-sharing popularity
-
-**2. `temp` (Temperature) - Coefficient: +5847.65**
-- **P-value:** < 0.001 (Highly Significant)  
-- **Impact:** Each unit increase in normalized temperature increases demand by 5,848 bikes/day
-- **Business Meaning:** Warmer weather dramatically boosts bike usage
-- **Significance:** Most influential weather factor for demand prediction
-
-**3. `weathersit_3` (Light Rain/Snow) - Coefficient: -1901.47**
-- **P-value:** < 0.001 (Highly Significant)
-- **Impact:** Light rain/snow conditions decrease demand by 1,901 bikes/day compared to clear weather
-- **Business Meaning:** Adverse weather significantly reduces bike sharing usage
-- **Significance:** Critical factor for weather-responsive operations
-
-**Key Insights:**
-- **Temperature** is the strongest predictor, showing bike sharing is highly weather-dependent
-- **Year trend** demonstrates market growth and business expansion opportunity  
-- **Weather conditions** create significant operational challenges requiring proactive management
-
-**Model Performance:**
-- These features are part of the optimal model selected through RFE
-- Combined R² score: 0.8365 (explains 83.7% of demand variation)
-- All coefficients are statistically significant with p-values < 0.001
-- Model shows excellent predictive capability for business planning
-
-**Business Applications:**
-1. **Temperature-based forecasting** for daily operations
-2. **Year-over-year growth planning** for capacity expansion
-3. **Weather-responsive strategies** for adverse condition management
-
----
-
-## GENERAL SUBJECTIVE QUESTIONS (22 marks)
-
-### Question 1: Explain the linear regression algorithm in detail. (4 marks)
-
-**Answer:**
-
-Linear regression is a fundamental supervised learning algorithm that models the relationship between a dependent variable (target) and one or more independent variables (features) using a linear equation.
-
-**1. MATHEMATICAL FOUNDATION:**
-
-**Simple Linear Regression:**
-```
-y = β₀ + β₁x + ε
-```
-Where:
-- y = dependent variable (target)
-- x = independent variable (feature)
-- β₀ = intercept (y-value when x = 0)
-- β₁ = slope coefficient (change in y per unit change in x)
-- ε = error term (residual)
-
-**Multiple Linear Regression:**
-```
-y = β₀ + β₁x₁ + β₂x₂ + ... + βₙxₙ + ε
-```
-
-**Matrix Form:**
-```
-Y = Xβ + ε
-```
-
-**2. ALGORITHM MECHANISM:**
-
-**Objective:** Find the best-fitting line that minimizes the sum of squared residuals (errors).
-
-**Cost Function (Ordinary Least Squares - OLS):**
-```
-J(β) = Σ(yᵢ - ŷᵢ)² = Σ(yᵢ - (β₀ + β₁x₁ᵢ + ... + βₙxₙᵢ))²
-```
-
-**Optimization:** Minimize J(β) by taking partial derivatives and setting them to zero:
-```
-∂J/∂β₀ = 0, ∂J/∂β₁ = 0, ..., ∂J/∂βₙ = 0
-```
-
-**3. SOLUTION METHODS:**
-
-**Analytical Solution (Normal Equation):**
-```
-β = (X'X)⁻¹X'Y
-```
-- Requires matrix inversion
-- Computationally expensive for large datasets
-- Exact solution when X'X is invertible
-
-**Gradient Descent (Iterative Solution):**
-```
-βⱼ = βⱼ - α(∂J/∂βⱼ)
-```
-Where α is the learning rate
-- Iterative optimization
-- Better for large datasets
-- Requires hyperparameter tuning
-
-**4. ALGORITHM STEPS:**
-
-1. **Data Preparation:**
-   - Clean and preprocess data
-   - Handle missing values and outliers
-   - Feature scaling if necessary
-
-2. **Model Training:**
-   - Calculate coefficients using OLS or gradient descent
-   - Fit the linear equation to training data
-
-3. **Prediction:**
-   - Apply learned coefficients to new data
-   - ŷ = β₀ + β₁x₁ + β₂x₂ + ... + βₙxₙ
-
-4. **Evaluation:**
-   - Calculate performance metrics (R², RMSE, MAE)
-   - Validate assumptions and model quality
-
-**5. KEY ASSUMPTIONS:**
-- Linearity between features and target
-- Independence of observations
-- Homoscedasticity (constant variance)
-- Normality of residuals
-- No perfect multicollinearity
-
-**6. ADVANTAGES:**
-- Simple and interpretable
-- Fast training and prediction
-- No hyperparameter tuning required
-- Provides statistical significance testing
-- Good baseline model
-
-**7. LIMITATIONS:**
-- Assumes linear relationships
-- Sensitive to outliers
-- Requires assumption validation
-- Cannot capture complex non-linear patterns
-- Prone to overfitting with many features
-
----
-
-### Question 2: Explain the Anscombe's quartet in detail. (3 marks)
-
-**Answer:**
-
-**Anscombe's Quartet** is a famous statistical demonstration created by Francis Anscombe in 1973 that illustrates the critical importance of data visualization in statistical analysis.
-
-**1. WHAT IS ANSCOMBE'S QUARTET:**
-
-Anscombe's Quartet consists of **four different datasets**, each containing 11 (x,y) data points that have **nearly identical statistical properties** but **dramatically different visual patterns** when plotted.
-
-**2. IDENTICAL STATISTICAL PROPERTIES:**
-
-All four datasets share the following statistical characteristics:
-- **Mean of x:** 9.0
-- **Mean of y:** 7.5  
-- **Variance of x:** 11.0
-- **Variance of y:** 4.12
-- **Correlation coefficient (r):** 0.816
-- **Linear regression equation:** y = 3.00 + 0.500x
-- **R-squared:** 0.67
-- **Sum of squares:** Same for all datasets
-
-**3. DRAMATICALLY DIFFERENT VISUAL PATTERNS:**
-
-**Dataset I (Linear Relationship):**
-- Shows a clear linear relationship with some scatter
-- Follows the regression line with normal residual distribution
-- Represents the "ideal" case for linear regression
-
-**Dataset II (Non-linear Relationship):**
-- Shows a perfect quadratic (parabolic) relationship
-- Linear regression is inappropriate despite good R²
-- Demonstrates that correlation doesn't imply linear relationship
-
-**Dataset III (Linear with Outlier):**
-- Shows perfect linear relationship except for one outlier
-- Single outlier dramatically affects the regression line
-- Illustrates the impact of outliers on linear regression
-
-**Dataset IV (Vertical Relationship):**
-- Shows no relationship between x and y for most points
-- One extreme outlier creates artificial correlation
-- Demonstrates how leverage points can distort results
-
-**4. KEY LESSONS AND IMPLICATIONS:**
-
-**Lesson 1: Statistics Alone Are Insufficient**
-- Identical summary statistics can hide completely different underlying patterns
-- Descriptive statistics provide limited insight without visualization
-- R² and correlation can be misleading without context
-
-**Lesson 2: Always Visualize Your Data**
-- Scatter plots reveal patterns that statistics cannot capture
-- Data visualization is essential before applying any model
-- Visual inspection helps identify appropriate modeling approaches
-
-**Lesson 3: Model Assumptions Matter**
-- Linear regression assumes linear relationships
-- Outliers can dramatically impact model performance
-- Assumption validation is critical for reliable results
-
-**Lesson 4: One Size Doesn't Fit All**
-- Different datasets require different analytical approaches
-- The same model may be appropriate for some data but not others
-- Context and domain knowledge are crucial
-
-**5. MODERN RELEVANCE:**
-
-**In Machine Learning:**
-- Emphasizes the importance of Exploratory Data Analysis (EDA)
-- Demonstrates why feature engineering and data understanding are crucial
-- Shows that evaluation metrics alone don't guarantee model quality
-
-**In Business Analytics:**
-- Highlights the need for data visualization in decision-making
-- Warns against relying solely on summary statistics
-- Emphasizes the importance of understanding data before modeling
-
-**In Data Science Practice:**
-- Mandatory data visualization before model building
-- Residual analysis and assumption checking
-- Multiple model comparison and validation
-
-**6. PRACTICAL APPLICATION:**
-
-When working with any dataset, data scientists should:
-1. **Always start with visualization** (scatter plots, histograms, box plots)
-2. **Check for outliers and anomalies**
-3. **Validate model assumptions** through residual analysis
-4. **Use multiple evaluation methods** beyond single metrics
-5. **Apply domain knowledge** to interpret results meaningfully
-
-Anscombe's Quartet serves as a timeless reminder that **"statistics without visualization can be dangerously misleading"** and that proper data analysis requires both quantitative rigor and visual intelligence.
-
----
-
-### Question 3: What is Pearson's R? (3 marks)
-
-**Answer:**
-
-**Pearson's R** (also known as Pearson Product-Moment Correlation Coefficient) is a statistical measure that quantifies the **linear relationship** between two continuous variables.
-
-**1. DEFINITION AND FORMULA:**
-
-**Mathematical Definition:**
-Pearson's R measures the strength and direction of linear association between two variables X and Y.
-
-**Population Correlation Coefficient (ρ):**
-```
-ρ = Σ[(Xi - μx)(Yi - μy)] / √[Σ(Xi - μx)² × Σ(Yi - μy)²]
-```
-
-**Sample Correlation Coefficient (r):**
-```
-r = Σ[(Xi - X̄)(Yi - Ȳ)] / √[Σ(Xi - X̄)² × Σ(Yi - Ȳ)²]
-```
-
-Where:
-- Xi, Yi = individual data points
-- X̄, Ȳ = sample means
-- μx, μy = population means
-
-**Alternative Formula:**
-```
-r = Cov(X,Y) / (σx × σy)
-```
-Where Cov(X,Y) is covariance and σx, σy are standard deviations.
-
-**2. PROPERTIES AND INTERPRETATION:**
-
-**Range:** -1 ≤ r ≤ +1
-
-**Interpretation:**
-- **r = +1:** Perfect positive linear relationship
-- **r = -1:** Perfect negative linear relationship  
-- **r = 0:** No linear relationship
-- **|r| > 0.7:** Strong linear relationship
-- **0.3 < |r| < 0.7:** Moderate linear relationship
-- **|r| < 0.3:** Weak linear relationship
-
-**Direction:**
-- **Positive r:** As X increases, Y tends to increase
-- **Negative r:** As X increases, Y tends to decrease
-
-**3. KEY CHARACTERISTICS:**
-
-**Strengths:**
-- **Scale Invariant:** Unaffected by linear transformations
-- **Dimensionless:** Pure number without units
-- **Symmetric:** r(X,Y) = r(Y,X)
-- **Widely Understood:** Standard measure in statistics
-- **Foundation for Regression:** R² in linear regression equals r²
-
-**Limitations:**
-- **Only Linear Relationships:** Misses non-linear associations
-- **Sensitive to Outliers:** Extreme values can distort correlation
-- **Assumption of Normality:** Works best with normally distributed data
-- **Correlation ≠ Causation:** Does not imply causal relationship
-
-**4. CALCULATION EXAMPLE:**
-
-Consider temperature (X) and bike rentals (Y):
-```
-X (temp): [20, 25, 30, 35, 40]
-Y (bikes): [100, 150, 200, 250, 300]
-
-Step 1: Calculate means
-X̄ = 30, Ȳ = 200
-
-Step 2: Calculate deviations and products
-Σ(Xi - X̄)(Yi - Ȳ) = 2500
-Σ(Xi - X̄)² = 250
-Σ(Yi - Ȳ)² = 25000
-
-Step 3: Apply formula
-r = 2500 / √(250 × 25000) = 2500 / 2500 = 1.0
-```
-Result: Perfect positive correlation (r = 1.0)
-
-**5. PRACTICAL APPLICATIONS:**
-
-**In Linear Regression:**
-- **Feature Selection:** High |r| indicates predictive features
-- **Model Performance:** R² = r² for simple linear regression
-- **Assumption Checking:** Linear relationship validation
-
-**In Data Analysis:**
-- **Exploratory Data Analysis:** Identify relationships between variables
-- **Multicollinearity Detection:** High correlation between predictors
-- **Quality Control:** Monitor relationships over time
-
-**In Business Analytics:**
-- **Marketing:** Customer satisfaction vs loyalty correlation
-- **Finance:** Risk vs return relationship analysis
-- **Operations:** Process variables correlation analysis
-
-**6. INTERPRETATION IN CONTEXT:**
-
-**BoomBikes Example:**
-- **temp vs cnt:** r = 0.627 (strong positive correlation)
-  - Interpretation: Warmer weather strongly increases bike demand
-- **hum vs cnt:** r = -0.101 (weak negative correlation)  
-  - Interpretation: Higher humidity slightly decreases bike demand
-- **windspeed vs cnt:** r = -0.235 (moderate negative correlation)
-  - Interpretation: Windier conditions moderately reduce bike demand
-
-**7. IMPORTANT CONSIDERATIONS:**
-
-**When Pearson's R is Appropriate:**
-- Both variables are continuous
-- Relationship is approximately linear
-- Data is reasonably normally distributed
-- No extreme outliers present
-
-**When to Use Alternatives:**
-- **Spearman's Rank Correlation:** For non-linear monotonic relationships
-- **Kendall's Tau:** For small samples or non-normal data
-- **Mutual Information:** For any type of relationship (linear/non-linear)
-
-**Common Misconceptions:**
-- **r = 0 doesn't mean no relationship** (could be non-linear)
-- **High |r| doesn't guarantee causation**
-- **r is not a percentage** (r = 0.5 ≠ 50% relationship)
-
-Pearson's R remains one of the most fundamental and widely used statistical measures for understanding linear relationships between variables in data analysis and machine learning.
-
----
-
-### Question 4: What is scaling? Why is scaling performed? What is the difference between normalized scaling and standardized scaling? (3 marks)
-
-**Answer:**
-
-**Scaling** is a data preprocessing technique that transforms numerical features to a common scale or range, ensuring that all features contribute equally to machine learning algorithms.
-
-**1. WHAT IS SCALING:**
-
-Scaling adjusts the **range and distribution** of numerical features without changing the fundamental relationships in the data. It transforms features from their original scales to a standardized scale, making features comparable.
-
-**Example:**
-- Original data: Age (20-80), Income ($20K-$200K), Temperature (0-40°C)
-- After scaling: All features within similar ranges (e.g., 0-1 or mean=0, std=1)
-
-**2. WHY IS SCALING PERFORMED:**
-
-**Problem with Unscaled Data:**
-- Features with larger scales dominate the algorithm
-- Distance-based algorithms become biased toward high-magnitude features
-- Gradient descent convergence becomes slow and unstable
-- Model coefficients become difficult to interpret
-
-**Benefits of Scaling:**
-
-**A. Improved Algorithm Performance:**
-- **Distance-based algorithms** (KNN, K-means, SVM): Equal weight to all features
-- **Gradient-based algorithms** (Linear Regression, Neural Networks): Faster convergence
-- **Regularized models** (Ridge, Lasso): Fair penalization across features
-
-**B. Numerical Stability:**
-- Prevents computational overflow/underflow
-- Improves matrix operations stability
-- Reduces floating-point precision errors
-
-**C. Fair Feature Comparison:**
-- Enables meaningful comparison of feature importance
-- Prevents dominance by high-magnitude features
-- Improves interpretability of coefficients
-
-**D. Faster Training:**
-- Gradient descent converges faster
-- Reduces number of iterations required
-- Improves computational efficiency
-
-**3. NORMALIZED SCALING (Min-Max Scaling):**
-
-**Formula:**
-```
-X_normalized = (X - X_min) / (X_max - X_min)
-```
-
-**Characteristics:**
-- **Range:** Transforms data to [0, 1] range
-- **Preserves:** Original distribution shape
-- **Maintains:** Zero values as zero
-- **Formula Result:** 0 ≤ X_normalized ≤ 1
-
-**Example:**
-```python
-Original data: [10, 20, 30, 40, 50]
-Min = 10, Max = 50
-Normalized: [0.0, 0.25, 0.5, 0.75, 1.0]
-```
-
-**When to Use:**
-- When you know the approximate upper and lower bounds
-- When data is uniformly distributed
-- When you need bounded output (0-1 range)
-- For neural networks (bounded activation functions)
-
-**Advantages:**
-- Simple and intuitive
-- Preserves exact zero values
-- Bounded output range
-- Maintains relationships between values
-
-**Disadvantages:**
-- Sensitive to outliers (outliers can squeeze the range)
-- Not robust to new data outside original range
-- May not work well with non-uniform distributions
-
-**4. STANDARDIZED SCALING (Z-Score Normalization):**
-
-**Formula:**
-```
-X_standardized = (X - μ) / σ
-```
-Where μ = mean, σ = standard deviation
-
-**Characteristics:**
-- **Mean:** 0 (centered around zero)
-- **Standard Deviation:** 1
-- **Range:** Unbounded (-∞, +∞)
-- **Distribution:** Maintains original shape
-
-**Example:**
-```python
-Original data: [10, 20, 30, 40, 50]
-Mean = 30, Std = 15.81
-Standardized: [-1.26, -0.63, 0.0, 0.63, 1.26]
-```
-
-**When to Use:**
-- When data follows normal distribution
-- When presence of outliers is acceptable
-- For algorithms assuming normally distributed data
-- When you don't know data bounds
-
-**Advantages:**
-- Robust to outliers (compared to min-max)
-- Works well with normally distributed data
-- Unbounded range handles extreme values
-- Centers data around zero
-
-**Disadvantages:**
-- Doesn't preserve zero values
-- Unbounded range (can be issue for some algorithms)
-- Assumes normal distribution for best results
-
-**5. COMPARISON TABLE:**
-
-| Aspect | Normalized Scaling | Standardized Scaling |
-|--------|-------------------|---------------------|
-| **Formula** | (X - X_min)/(X_max - X_min) | (X - μ)/σ |
-| **Range** | [0, 1] | (-∞, +∞) |
-| **Mean** | Variable | 0 |
-| **Std Dev** | Variable | 1 |
-| **Outlier Sensitivity** | High | Moderate |
-| **Zero Preservation** | Yes | No |
-| **Distribution Assumption** | None | Normal (preferred) |
-| **Use Case** | Bounded features needed | Normal distribution data |
-
-**6. PRACTICAL IMPLEMENTATION:**
-
-**Python Example:**
-```python
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
-
-# Normalized Scaling
-min_max_scaler = MinMaxScaler()
-X_normalized = min_max_scaler.fit_transform(X_train)
-
-# Standardized Scaling  
-standard_scaler = StandardScaler()
-X_standardized = standard_scaler.fit_transform(X_train)
-```
-
-**7. WHEN TO USE WHICH:**
-
-**Use Normalized Scaling When:**
-- Neural networks with sigmoid/tanh activation
-- Image processing (pixel values 0-255 → 0-1)
-- Known bounded data ranges
-- Need to preserve zero values
-
-**Use Standardized Scaling When:**
-- Linear regression, SVM, PCA
-- Data follows normal distribution
-- Presence of outliers
-- Unknown data bounds
-
-**In BoomBikes Project:**
-We used **StandardScaler** because:
-- Linear regression benefits from standardized features
-- Weather data (temp, humidity) has different scales
-- Helps with coefficient interpretation
-- Improves numerical stability in matrix operations
-
-**Best Practices:**
-1. **Always fit scaler on training data only** (prevent data leakage)
-2. **Apply same transformation to test data**
-3. **Consider data distribution** when choosing method
-4. **Document scaling method** for production deployment
-5. **Inverse transform predictions** if needed for interpretation
-
----
-
-### Question 5: You might have observed that sometimes the value of VIF is infinite. Why does this happen? (3 marks)
-
-**Answer:**
-
-**VIF (Variance Inflation Factor) becomes infinite** when there is **perfect multicollinearity** among the independent variables in a regression model. This is a critical issue that indicates severe problems with the feature matrix.
-
-**1. UNDERSTANDING VIF:**
-
-**VIF Formula:**
-```
-VIF_i = 1 / (1 - R²_i)
-```
-
-Where R²_i is the coefficient of determination when variable Xi is regressed against all other independent variables.
-
-**VIF Interpretation:**
-- **VIF = 1:** No multicollinearity
-- **VIF < 5:** Low multicollinearity  
-- **VIF 5-10:** Moderate multicollinearity
-- **VIF > 10:** High multicollinearity (problematic)
-- **VIF = ∞:** Perfect multicollinearity (critical issue)
-
-**2. WHY INFINITE VIF OCCURS:**
-
-**Mathematical Explanation:**
-When R²_i = 1 (perfect correlation), the denominator becomes:
-```
-1 - R²_i = 1 - 1 = 0
-VIF_i = 1/0 = ∞
-```
-
-This happens when one variable can be **perfectly predicted** from other variables in the model.
-
-**3. COMMON CAUSES OF INFINITE VIF:**
-
-**A. Dummy Variable Trap:**
-The most common cause in categorical variable encoding.
-
-**Example:**
-```python
-# Wrong approach - creates perfect multicollinearity
-season_spring = [1, 0, 0, 0]
-season_summer = [0, 1, 0, 0] 
-season_fall = [0, 0, 1, 0]
-season_winter = [0, 0, 0, 1]
-
-# Problem: spring + summer + fall + winter = 1 (always)
-# If you know 3 values, the 4th is perfectly determined
-```
-
-**Solution:**
-```python
-# Correct approach - drop one category
-pd.get_dummies(data['season'], drop_first=True)
-# Creates only 3 dummies, with the first category as reference
-```
-
-**B. Linear Dependency Between Variables:**
-
-**Example 1 - Mathematical Relationship:**
-```python
-X1 = [1, 2, 3, 4, 5]      # Original variable
-X2 = [2, 4, 6, 8, 10]     # X2 = 2 * X1 (perfect linear relationship)
-X3 = [5, 10, 15, 20, 25]  # X3 = 5 * X1 (another perfect relationship)
-```
-
-**Example 2 - Derived Variables:**
-```python
-total_income = base_salary + bonus + overtime
-# If you include all four variables, total_income is perfectly determined
-```
-
-**C. Duplicate or Identical Variables:**
-```python
-temperature_celsius = [20, 25, 30, 35]
-temperature_celsius_copy = [20, 25, 30, 35]  # Identical variable
-# Creates perfect correlation (r = 1.0)
-```
-
-**D. Constant Variables:**
-```python
-constant_feature = [1, 1, 1, 1]  # No variation
-# When regressed against other variables, can create singularity
-```
-
-**4. MATHEMATICAL CONSEQUENCES:**
-
-**Matrix Singularity:**
-Perfect multicollinearity makes the correlation matrix **singular** (non-invertible):
-```
-(X'X)^-1 does not exist
-```
-
-**Impact on OLS Estimation:**
-```
-β = (X'X)^-1 X'Y  # Cannot be computed when (X'X)^-1 doesn't exist
-```
-
-**Computational Issues:**
-- Matrix inversion fails
-- Coefficients become indeterminate
-- Standard errors become infinite
-- Statistical tests become meaningless
-
-**5. DETECTION METHODS:**
-
-**A. VIF Calculation:**
-```python
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-
-def calculate_vif(df):
-    vif_data = pd.DataFrame()
-    vif_data["Feature"] = df.columns
-    vif_data["VIF"] = [variance_inflation_factor(df.values, i) 
-                       for i in range(df.shape[1])]
-    return vif_data
-
-# Infinite VIF indicates perfect multicollinearity
-```
-
-**B. Correlation Matrix Analysis:**
-```python
-correlation_matrix = df.corr()
-# Look for correlations of exactly 1.0 (or -1.0)
-perfect_corr = correlation_matrix[correlation_matrix.abs() == 1.0]
-```
-
-**C. Matrix Rank Check:**
-```python
-import numpy as np
-rank = np.linalg.matrix_rank(X)
-if rank < X.shape[1]:
-    print("Perfect multicollinearity detected")
-```
-
-**6. SOLUTIONS TO INFINITE VIF:**
-
-**A. Remove Redundant Variables:**
-```python
-# Drop one of the perfectly correlated variables
-df_cleaned = df.drop(['redundant_variable'], axis=1)
-```
-
-**B. Use drop_first=True for Categorical Variables:**
-```python
-# Correct dummy variable creation
-dummies = pd.get_dummies(df['category'], drop_first=True)
-```
-
-**C. Combine Related Variables:**
-```python
-# Instead of: height_feet, height_inches
-# Use: total_height_inches = height_feet * 12 + height_inches
-```
-
-**D. Principal Component Analysis (PCA):**
-```python
-from sklearn.decomposition import PCA
-pca = PCA(n_components=n)  # Reduce dimensionality
-X_pca = pca.fit_transform(X)
-```
-
-**E. Regularization Techniques:**
-```python
-# Ridge regression can handle multicollinearity
-from sklearn.linear_model import Ridge
-ridge = Ridge(alpha=1.0)  # Alpha > 0 handles multicollinearity
-```
-
-**7. REAL-WORLD EXAMPLE (BoomBikes Context):**
-
-**Scenario:** If we included both temperature variables without proper handling:
-```python
-# This could cause infinite VIF:
-features = ['temp', 'atemp', 'season_Spring', 'season_Summer', 
-           'season_Fall', 'season_Winter']  # All 4 season dummies
-
-# Solution applied in our project:
-features = ['temp', 'atemp', 'season_Summer', 'season_Fall', 
-           'season_Winter']  # Dropped season_Spring as reference
-```
-
-**8. PREVENTION STRATEGIES:**
-
-1. **Always use drop_first=True** for categorical encoding
-2. **Check correlation matrix** before modeling  
-3. **Examine data generation process** for mathematical relationships
-4. **Calculate VIF scores** as part of preprocessing
-5. **Use domain knowledge** to identify redundant variables
-6. **Implement feature selection techniques** systematically
-
-**Key Takeaway:** Infinite VIF is a **red flag** indicating that the model matrix is singular and the regression cannot be reliably estimated. It requires immediate attention through variable removal, combination, or regularization techniques.
-
----
-
-### Question 6: What is a Q-Q plot? Explain the use and importance of a Q-Q plot in linear regression. (3 marks)
-
-**Answer:**
-
-A **Q-Q (Quantile-Quantile) plot** is a graphical statistical tool that compares the quantiles of two probability distributions to assess whether they follow the same distribution. In linear regression, it's primarily used to test the **normality assumption of residuals**.
-
-**1. WHAT IS A Q-Q PLOT:**
-
-**Definition:**
-A Q-Q plot graphs the quantiles of one dataset against the quantiles of another dataset (or a theoretical distribution). Points falling approximately on a straight line indicate that the two datasets follow similar distributions.
-
-**Construction:**
-- **X-axis:** Theoretical quantiles (expected values from a reference distribution)
-- **Y-axis:** Sample quantiles (actual values from your data)
-- **Reference Line:** y = x (45-degree line representing perfect agreement)
-
-**Mathematical Foundation:**
-For a normal Q-Q plot:
-- **Theoretical quantiles:** z-scores from standard normal distribution N(0,1)
-- **Sample quantiles:** Ordered residuals transformed to z-scores
-- **Expected relationship:** If data is normal, points should lie on y = x line
-
-**2. HOW Q-Q PLOTS ARE CREATED:**
-
-**Step-by-Step Process:**
-```python
-import scipy.stats as stats
-import matplotlib.pyplot as plt
-
-# Step 1: Sort the residuals
-sorted_residuals = np.sort(residuals)
-
-# Step 2: Calculate theoretical quantiles
-n = len(residuals)
-theoretical_quantiles = stats.norm.ppf(np.linspace(0.01, 0.99, n))
-
-# Step 3: Plot actual vs theoretical quantiles
-plt.scatter(theoretical_quantiles, sorted_residuals)
-plt.plot(theoretical_quantiles, theoretical_quantiles, 'r--')  # Reference line
-```
-
-**Alternative (Built-in):**
-```python
-stats.probplot(residuals, dist="norm", plot=plt)
-```
-
-**3. INTERPRETATION OF Q-Q PLOTS:**
-
-**A. Normal Distribution (Ideal Case):**
-- **Pattern:** Points lie approximately on straight line
-- **Interpretation:** Residuals are normally distributed
-- **Implication:** Normality assumption satisfied
-
-**B. Heavy Tails:**
-- **Pattern:** Points curve above line at both ends
-- **Interpretation:** Distribution has heavier tails than normal
-- **Implication:** More extreme values than expected
-
-**C. Light Tails:**
-- **Pattern:** Points curve below line at both ends  
-- **Interpretation:** Distribution has lighter tails than normal
-- **Implication:** Fewer extreme values than expected
-
-**D. Right Skewness:**
-- **Pattern:** Points curve upward (especially at right end)
-- **Interpretation:** Distribution is right-skewed
-- **Implication:** Positive skewness in residuals
-
-**E. Left Skewness:**
-- **Pattern:** Points curve downward (especially at left end)
-- **Interpretation:** Distribution is left-skewed
-- **Implication:** Negative skewness in residuals
-
-**F. Non-Normal Distribution:**
-- **Pattern:** Systematic deviations from straight line
-- **Interpretation:** Data doesn't follow normal distribution
-- **Implication:** Normality assumption violated
-
-**4. USE IN LINEAR REGRESSION:**
-
-**Primary Purpose: Normality Testing**
-Linear regression assumes that **residuals are normally distributed**. Q-Q plots provide visual assessment of this critical assumption.
-
-**Residual Analysis Process:**
-```python
-# 1. Fit linear regression model
-model = LinearRegression().fit(X_train, y_train)
-y_pred = model.predict(X_train)
-
-# 2. Calculate residuals
-residuals = y_train - y_pred
-
-# 3. Create Q-Q plot
-stats.probplot(residuals, dist="norm", plot=plt)
-plt.title("Q-Q Plot of Residuals")
-plt.grid(True)
-plt.show()
-```
-
-**5. IMPORTANCE IN LINEAR REGRESSION:**
-
-**A. Assumption Validation:**
-- **Critical Assumption:** Residuals ~ N(0, σ²)
-- **Impact:** Normality affects confidence intervals and hypothesis tests
-- **Consequence:** Non-normal residuals invalidate statistical inference
-
-**B. Model Diagnostics:**
-- **Error Pattern Detection:** Identifies systematic deviations
-- **Outlier Identification:** Extreme points clearly visible
-- **Distribution Assessment:** Reveals skewness, kurtosis issues
-
-**C. Statistical Inference:**
-- **Confidence Intervals:** Rely on normal distribution assumption
-- **Hypothesis Testing:** t-tests and F-tests assume normality
-- **Prediction Intervals:** Accuracy depends on residual normality
-
-**D. Model Improvement:**
-- **Transformation Guidance:** Suggests appropriate data transformations
-- **Feature Engineering:** Indicates need for additional features
-- **Model Selection:** Helps choose between different model types
-
-**6. PRACTICAL EXAMPLE (BoomBikes Context):**
-
-**Scenario:** Testing normality of residuals in bike demand prediction model.
-
-```python
-# After fitting the linear regression model
-residuals = y_train - y_train_pred
-
-# Create Q-Q plot
-fig, ax = plt.subplots(figsize=(8, 6))
-stats.probplot(residuals, dist="norm", plot=ax)
-ax.set_title("Q-Q Plot: Residuals vs Normal Distribution")
-ax.grid(True, alpha=0.3)
-
-# Interpretation:
-# - Points close to line: Normal residuals ✓
-# - Points deviating from line: Non-normal residuals ⚠
-```
-
-**Expected Results:**
-- **Good model:** Points closely follow diagonal line
-- **Issues detected:** Systematic curvature or outliers
-- **Action needed:** Data transformation or model revision
-
-**7. COMPLEMENTARY DIAGNOSTIC TOOLS:**
-
-**Used Together With:**
-
-**A. Shapiro-Wilk Test:**
-```python
-from scipy.stats import shapiro
-stat, p_value = shapiro(residuals)
-print(f"Shapiro-Wilk test: p-value = {p_value:.4f}")
-```
-
-**B. Histogram with Normal Overlay:**
-```python
-plt.hist(residuals, bins=30, density=True, alpha=0.7)
-x = np.linspace(residuals.min(), residuals.max(), 100)
-plt.plot(x, stats.norm.pdf(x, residuals.mean(), residuals.std()), 'r-')
-```
-
-**C. Other Residual Plots:**
-- Residuals vs Fitted Values (linearity, homoscedasticity)
-- Scale-Location Plot (homoscedasticity)
-- Cook's Distance (outliers and leverage)
-
-**8. ACTIONABLE INSIGHTS:**
-
-**When Q-Q Plot Shows Non-Normality:**
-
-**A. Data Transformation:**
-```python
-# Log transformation for right skewness
-y_log = np.log(y + 1)
-
-# Square root transformation for moderate skewness  
-y_sqrt = np.sqrt(y)
-
-# Box-Cox transformation (optimal)
-from scipy.stats import boxcox
-y_boxcox, lambda_param = boxcox(y + 1)
-```
-
-**B. Outlier Treatment:**
-- Identify and investigate extreme residuals
-- Consider robust regression methods
-- Implement outlier removal or transformation
-
-**C. Model Revision:**
-- Add polynomial terms for non-linearity
-- Include interaction terms
-- Consider non-linear regression models
-
-**D. Alternative Approaches:**
-- Robust regression (less sensitive to outliers)
-- Non-parametric methods
-- Bootstrapping for inference
-
-**9. LIMITATIONS AND CONSIDERATIONS:**
-
-**Limitations:**
-- **Subjective interpretation:** Visual assessment can be subjective
-- **Sample size dependency:** Small samples may not show clear patterns  
-- **Multiple testing:** Should be used with other diagnostic tools
-
-**Best Practices:**
-- **Always use with other diagnostics** (statistical tests, other plots)
-- **Consider sample size** when interpreting
-- **Focus on systematic patterns** rather than individual points
-- **Use domain knowledge** to interpret deviations
-
-**Conclusion:**
-Q-Q plots are **essential diagnostic tools** in linear regression that provide intuitive visual assessment of the normality assumption. They help identify distribution issues, guide model improvements, and ensure reliable statistical inference. When combined with other diagnostic methods, Q-Q plots form a cornerstone of robust regression analysis and model validation.
-
----
-
-## SUMMARY AND CONCLUSION
-
-This comprehensive analysis of linear regression concepts demonstrates both theoretical understanding and practical application in the BoomBikes bike-sharing demand prediction project. The assignment-based questions showcase real-world application of statistical concepts, while the general questions provide deep theoretical foundation necessary for advanced data science practice.
-
-**Key Achievements:**
-- ✅ Comprehensive analysis of categorical and numerical variables
-- ✅ Proper implementation of dummy variable encoding with multicollinearity prevention
-- ✅ Rigorous validation of all linear regression assumptions
-- ✅ Clear identification of top contributing features with statistical significance
-- ✅ Deep understanding of fundamental statistical concepts and their practical applications
-
-**Technical Excellence:**
-- Statistical rigor in hypothesis testing and assumption validation
-- Proper application of visualization techniques for data understanding
-- Understanding of multicollinearity issues and prevention strategies
-- Knowledge of scaling techniques and their appropriate applications
-- Comprehensive grasp of regression diagnostics and interpretation
-
-**Business Impact:**
-The BoomBikes analysis provides actionable insights for post-pandemic recovery strategy, demonstrating how statistical knowledge translates into real business value through data-driven decision making.
-
----
-
-*This document contains complete answers to all subjective questions with detailed explanations, practical examples, and theoretical foundations essential for mastering linear regression in data science applications.*
+%PDF-1.4
+%���� ReportLab Generated PDF document http://www.reportlab.com
+1 0 obj
+<<
+/F1 2 0 R /F2 3 0 R
+>>
+endobj
+2 0 obj
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
+endobj
+3 0 obj
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
+endobj
+4 0 obj
+<<
+/Contents 17 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+5 0 obj
+<<
+/Contents 18 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+6 0 obj
+<<
+/Contents 19 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+7 0 obj
+<<
+/Contents 20 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+8 0 obj
+<<
+/Contents 21 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+9 0 obj
+<<
+/Contents 22 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+10 0 obj
+<<
+/Contents 23 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+11 0 obj
+<<
+/Contents 24 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+12 0 obj
+<<
+/Contents 25 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+13 0 obj
+<<
+/Contents 26 0 R /MediaBox [ 0 0 612 792 ] /Parent 16 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+14 0 obj
+<<
+/PageMode /UseNone /Pages 16 0 R /Type /Catalog
+>>
+endobj
+15 0 obj
+<<
+/Author (\(anonymous\)) /CreationDate (D:20251108203539+05'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20251108203539+05'00') /Producer (ReportLab PDF Library - www.reportlab.com) 
+  /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
+>>
+endobj
+16 0 obj
+<<
+/Count 10 /Kids [ 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R ] /Type /Pages
+>>
+endobj
+17 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1579
+>>
+stream
+Gatm;9lK&M&A@7.bb`t!E3pf8=n5mVACGY08C26a+I?DJM7/dBUmIldptp:o%m+PU$J$p7fFT?kn'/K_4qdAT,5#kX!aO"/isc#U@D2jWH6LLNiK*ffpG:73)(.*I'7:\<n85J#!!h[5"L0nDVKb2KJ5Z.7`u>@2EV'#!V,qVb.jSaGroGZTN=ee"-2t#Waea\!\5K?>&l7<\$M-cTrrs_U4J0X<[-*d='jDoOVsa'Y+o"/BmIU3in]4WZSiM2!\?S$.!@BV4P\.i+DUs`uJYgUm8Fd^+58*XeNp+;mP_9MENmC!2>T!11Rin6iq-@5[_m;M3%a>Q8BGu,J&4k<0^BVQWg7el=<$jJ[DG_OKi#u_K;C5hQ.M-XB26_e7/D-Hp?S4'bTU,A-jX[/rb)-\nq(pKO/IH@qVcmK&+QFaPq"IW<54ubn/n(8pUB)ZX6rB8!c)$9\X\qq]Y(/Bc?f6T#4s<3l]"r'#*6&LEB%[=$67,C+T"2jO(fbV'S/'!Y5I!2&@?RZ3iAIr$Lao\_BJ,KXM(;0`hCmIh6^9BW2]<@R$M.s_&7J6p3Y[B`er7A4e6PgV`drARc^@X4'_&NHJm#Xe'/GRmN4\ah/480786``4eG$rZ+,OL+-f/>n^VSQRWH#;+\e!+Q(e>%9GDqU+e4)uc@bV0XpSNcodkIlPARLKNASg+j%bWR1)d@<#PTHBdNo#1aQ<a0WUo9bdA;6uh)pGm$.<gY3r'$XpB!gZ"/*1`ME@QX3Nlj^@n/`=o9i^L$_nK*]2"80k(:1t7Z%J!ERZ(loPZ'7D:7.W\m`P2fGYW4T:`CtL<h><?PXMO,e'Q4d&!,"6&4^7'96UPed)]rko,PT4XGpiJHjuEs_h+ef_LGK_`,m]/V!H%6^ek9#>[n-TWHB5"*8kq;m0&ROo1b!dnB`BTN5?CU*d`\;J\d[f`Sk"Y(4tp-jeGNu#l7le8.g5m4_=bmP&fmLBR5!G[.=Dq'"M-+:(kgc26?6lT"[_Pe3=\Q4(7Ik'ILLi<OV9O0L/F99h3=*!D7eP*A;@2AEA,qdC5d:gRU2=WAZmlm:Mkig)='m"q@=^,Ge$[M''AT?*lD1mq;BKZfc2Cc6Zq]hHFF(F^>6N4Gfdd09l66RD'Yn=kK.#,B?:ahb+/gT14[(r-\/BBK<.pfT*,Gbl"Hj`oa%m:;a&TZ=9^qRJ!:hEbt@cPZ=/2's:%6*3D\LI']_-3@UAl7j_kO?NlW=4PiP(iZF5,Nm@A$*i&R;-2n'KFnS](Q6.<>^a9kb&)?$-BUBYUlP.]R1o=QP@?oSEe79=*Sq0H'eer-t]:fIR9%k6mn"7nUhl$T.6B.qKdc1P'`'Lm'$*4MA>@&r;kmMY1GA>Z;aIVR-hcb*p"Js#n2+)K&"4E3Xs(Ig^-orB^^R2*ihU^b*pd2T^=4q^c%BGb.<QT[jcq4!RB&W4kPQ_!\&Th,I&Xji=lU0kng'r9bc5#js0!dJ>6q36Mj%cj`dQ*i/j'gTqId2+"+*o!"<RL0AGfJe'O7IeD\`3./BD/RTjTg_@2HmmbAO3i'JS-3[*X9*W;&Dm[SVuInIpg!m$i~>endstream
+endobj
+18 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1722
+>>
+stream
+GatU4mr-r=&H/38ikEsr4O'%=(FY"J=Khemd&u6R!QG=IU2;NGW01+"s7^k1ac9jm9UikKiCK4$h7L:CGDW;S:[GjFK';A8rHK&USBu(DnK8asllH$[]D-CY[jT30)GU#]Y4_]MZb!q^nbu6;*\*W1o_`J;IS&^>Ss*AO/#a0,8Q/gH80c5;iKSI7'm[M>X&c'#ifDO8Ah?Ze-7>pZ)*_>Ia_Lg[,pOpmGN"dK,,[kH<@P&`UtNL>qi3^X\Wj)"A-@o34<mJr/i-d0MVkClG":NI7slA)31@X*piq0Lkr%(bni]P_h\4<;I%PZ@5M#<il&q4]FL0heZBQ54rNfJC\i2ED92\3TNSD(9_C_\.'kMMbD"hi'$)>E_QhI="r8'D*cG1MsqT\[dk9AKqkojq+&#o/UAL--,GKo%5*-oofhEB\'-cNsf]QOp=7;rei`NbT*W0%;,&Rp!?X#NXN)Pq4B"U>HCS.E-5iG>cCT6$f"Ki9hP'CGQ<B1-m$k]M]fiHTI)Yu*L9qe.'`H5n*L_U2OdQ/jc'DQR\u*:beR@IgeaA8h:B`ocf99\2oO(6%-B>3agl=^a0q+T%Y8C9Kj6bgO/qWA4a$QTjAg1gRZoh-ITh--C@Z)6B365<r0bn'$]AL\(RYUEC?shh\B\>8Q?Waa9.2A5\AmL6+BLje?!'g.$"tki1"i?urAa\h3RZH"WoUa;j<sop;@N4-Z!e/3*]dXNjf1I%%?FDG@\N$dN-@3N:1BY,CTkV%8:2`7:GY715!13_)X'4GQO\A%+V#eqJ2b$/o=>q_3[X:Bo5-9[+!c8Mp8:W_"BfNK2gt^n"]qYo($'cs%8]QA/ep$q@qo`B8ToMCR8lPms*[)^BF_=u8_)T.nP.=m*Yl&3TEc`5<6A:RY7>%!Ks]eR/sL17YrE]Ea3#Q;V=\NC-68TS+$'4.fl.SmVKq6W7#Y<G!fUWC@+mWFBu[,>8:p7sM@X1Ti#;jn-\='jG]hf(F5GCCSR4R+[Uu;#)oWHD?hi_I"^.$+[,f0A\'B<[Dug@.2G-X&]a+gE25FRi];E_LqIe@dd+idCF/ET>XSlaI]E5IRLq;]oFHM[,sHBf?+;uW]us?XF<6pf0#]@RLMOb&ORpI)T%IRj;C4%lT]"5a<_$Xb\4?p<cT3%P8e+P(h>(cO]Qkd0Y?+0Dl'O=h<06dRQc#*5PbT-,ZE/^_]\jTQ]q7bU3TF9A!;Zu>qjqh(]KH88d"*FL2sufF9Rr9cXgWLHo\)6?*EUgW*lXOF,M$224Q,\FA6PYi_^_hEfJ=o15pclPe3Ciab-5b.W0UTg$(Yf4u^0I/Y><sDmN,Web\O<PY:,T-'O98+\Q7ThYVJ;.)69Va@aFP%(?]l*2X,\U`gTZh$o#3Ya`iYc/[4hD(P$PTei)Y8obck+F,u3hdoid@&,Z:>fc"ipZ:49SSQ!4L_>VGM52c<!`48nG)8_aB4dKC(;)gaGRDhJCZN,UD82:975IC-7(862_1';lm:N&0AXi\84YIkJmh9\'4sMZ[5<9LFj@!6bZ9YH'Xu<34gbJTXHCkZpU1<PC*U$V&HI4,YT?'$6QMXf\@Fs[77rp?pgUr52E2P\FM*oH?e;L3a`(P806u[?i]S3W5[1bPBIFp_,86@9Ts)/.`M^,pj)eAbd_Q9P[#iE;TZpQt5^k0O8o_egKq'BkS^i+=cB0=(B_?n@>aGNuBpn+uLUl56Q@48rn~>endstream
+endobj
+19 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1899
+>>
+stream
+Gatm<gN)%,&:O:Sls#b+;Fubq`@i7d9cD>'SN9W3l&8sl&e\&o"9X0PPcsO..*AhJOJ?nSQ7WLKS?mS9@+QP)p^5i(=od>Oi7Bn2KFpmi&B;C#-L]mcjPn?O\:/HXJcYkH"g/#H:!YK^CZ/m'#esX&2A'ib[MdI>Sbnip.oZiF'tdO>a@$4_<PsD[OYP%qjrC0F3RaYs>]XEEkuTS7(FD@6LDa#,'l@?-CDRT84hdM?)oOlEDg+>SH=#5,[V4:u%X-o@hgnoJb6qoNb+r9.Re-06B7M(3VJ6R$Hj*a<5gB":5]&nLLT.R>/;1!jKM!_0J<efBU9Ss!ET_kk@$rMud=/hh3(,S1S+WQPfq`8MB@qi\%^iMk\DGU&6O:^!;-PD9lQ_jXT*!`@J^-VB*5\i?R!"?4\0IRFFYIDO_[m\f(mkV&:SCBW5;$X8a4kGm?r`C)9F&QW,H;)).DtUg?s;)l#2cpk4Wfr"*<#pQ-IZ-Z2Q>,nj.DS-.CVsq96fHKfU`bfKOlda*1"h8Kd#X`6*s/UTsNYq<@F-k`132X]^g+_p3hgS2Nl^T^>h,nKgAc$9]uOdgRMDJW@^c,Me^.ob+[6G'<,!CTkg'fEsoL7eMWXg;]:+tK)gmD?eJ"5C=^-qfhi:Jb)BCAho_1u<8:&pd%9t0MYPr9=Rj)#ra+oi.(c+>25h(do&Fa+ZYer?^(D1L]bKZUS=t&O;YZ)nL84@.r1P[--ikVJ[C#"5]<%`5d#WC-[+`OL5F3q?7:[BDc4p@sL`?+<"G&6!09C.h)0n"F<)!hRMak?3XC@q78+)(.NCUlmF?l\m0PT+Q:Sn"2hMR"B.F/je!G'(YSQj$G)<1LG`lq8m&$NX?N<fFUnGgt"d7kqU8sM<SG0kq;Y*O1MR4gE$<@d1*aehPLg2]1@lM`KXan^lZYju0:hIp5b2"1F_k3PVR\cQA<FW6=c?#2@n?O>r?M'$groP))ofA#J#gVs\TeOT[:&M*%dNAOb;PqfE`=aMg`8FcqN-UJanEnNE36bRIMr`$JE<Xr]!=oZhqgT/p)3;=YLh+d3`pV(@Bp9L*dU;HDn4NRVqUkioqU`_>d:DrZ*'i-F*2"hFg9#h1k<+E>'eeD)%2#G1sAU7W^;B35$53ApZ>'3%;q06#@Qtut]'pWlA\fp6,S"+>nmhO[_PnGCOY;;3=_pZ?DN(rDoa(L"KEF$.;s,q2!OF^dP=B0).<><sVQ`Y0'Gh_q?G<Hl?g\Sg69mUcLAV-)&ptk&=-;l/OV?+E-$eVZ=E6o[(6Oi'n^-CGe_<+a+(AAG9m4D>K1P2Sg@@Y`t)]=-cYGH&>mNk@^T5oc5>Oj>%V'6FB\M!-qTuQi+(%`^k,mPfcBQ.FD3ARm7:j_N-P0hRpo[LEdN`AuhX3"(SgQS,%RS)'09%hQF2T)i5D!h@)iaO'-Y+'toisW-[,M_^/moa5XR)m^?=-h:aN$[-EFI,VC$kO3Ga!2'(73`4gZ&&?GGB*kZ2\:%^=[=.QQe<:R7b/rTE/C*B7k@pcGg";mBSYWa_28XknV\l;-YYMu*$(.W/*mbE.LVM]\K77u:MXgcK"$hm97b3(dD(@)'":T;a`C,$>KA5eKB`gLadI5B5;`7e=r/VGEN.s()0U,S?XCQ%iHQ33ki0ITJ,V-J_^Suf`95#mr_CS,0uY"D.*JaZ_A$!2V-;OET^WRK\jqh;Uf:-I:)J8A*;7'#oR"qTXBX]lLT8a:7H,RQE9qc1=tQ^>6Q0`t`4Ah]g8\I<+c`VFh7`94)%OuJq,Y^\#B9:\)u:iBV8/U"J*,O]m3<p.Dk"fjoYV$qK6-NA3cb_$n=npRWLmI!-DPg-6C+D)r%[b"%97O"lpd*_dIl>qNT@I#D+h5`PaYi$m))HO%4ti_#GPmnnG~>endstream
+endobj
+20 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 736
+>>
+stream
+Gatn#c#T:-'SZ:1MR2Qskr8eOr^h9MVk#HGBu3P%fuS+eC-Wu+Ya`,jQ#)UTlE]o$(g'<qqK1%D2aPY`'#$dBI*$Bu4[G5TYE39lLAV85o#]?+3NQJgY`)Leb[YW01Re^N2U&'Rpuch89cUT5r?g!KA@Y*798ch5P(f[>,9pH3#d,M]g,a>%8#GPjlq$W=6"d-\L!p6(62-,#Q./37aF>B5jO&GIo*0-<b"fpfX7_LpC>lC_Ns&Yp,Llu,/QLb,f$3g%G$\':W[-]GE>FI2EBZ<^UR%C<&%-GQA0hVW*-Tc\kg$Z3km7gPJ?0;PEL_uobgU7eC#4n`nUCBqjU5Vq(@j5t%F[>m$E5ZGPhtBuT\IAkcr;a'jSE-A4Lp?5LU6;D\9'Sn*3%<aaO`H^S;1"uf;-'=%"5Kr!gF;R1'Z<N'tWc8$OEY-1aL;<iX@-@6BrsYmOZr8&8U)`"Obm@:Ql[R+Lo90V?W4JGfc/sdZ,:)Q:/XE1SIk#EEG1ZCf.Qf;+$RP16u7@;J9'&-[@$'hRF,sF`4*cK8_#"YL:l3^D];B&.L*$@Tr<V2*raaRis58Cr]e$9@+jSSoU?8R@VXqj$-"F^.>!;OiYa"QdOeG\+6#J]/A1ZgA?oFf!dh1KSi)@AEBcS5ejj]Cu42I>\,"MX!$ksgJ]N_HV=3Q)*6F,gb[i/]cc)rLW`F[-cK";*C1B.n*LkN)bfk'A&sFe>gn2GLWLX<Vm:^~>endstream
+endobj
+21 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1694
+>>
+stream
+Gatm;gQ(#H&:NH>R()a+\#Lb3"8$"8,\bZ%D&TlX!M]WHd5Dq8<(P/uIXTO=ZM3M0NDgZrmqO;sR58Jn0m3#CrQhhnH9S0D?H!U+1gNr5O8:\]6SG>RT.]-sjCh6)8V4j)f(IA5ncH#6LR[d.JQibEa*^OCn/\(OZBRi>oWFM2.:(XXRf5b)CVK`f4qB6(ib6Ck*^B,&cVN<`HOn-Qp>..8cfjK!b(V=eXX*#.PerNE9-^S#"!V)eUYMjl*6Fui.M(N4`h;N$c>LCBrbjdV(+?-LHCt^=Dk6r,Q?4QI00J/Z>=XU_bX<UI#;usPY4)q_Gcas,o$.8_6__dq\P#S:.;GarFe8'qhK5hKWa)j!W@h+P\S!'U#Er#L*-$'S*^i:K,_pp*pG7in\ZdQ[(]VJJW#)b%*/m!(Eu'g+oL^&ui*$sDk./,*,IC9YAj)i/#_T3767l9al[a6O/JVLdMWQlAporeb7b>fum<!1n'2DB#<U"<6"?m*SEuK:#k>$#]p?8W60=O]&#IF^tmkWPjH5lI"EkP3:*CUS?<F0Ue0ZMu5I#LuXQtj06W)Q'DQ=c\5Hijd9,[D>5Y/n^IB@;<5Ub:QP8oNWg\fqIB*rI4e=NJuL1"!C%FWnZ,P@J;cLsOFW'%(n'`KkEQg&JZB+)P,Fh/6`g#[>QuGF\'Z['Y8MW)0<?eDIS%f\<q=f!0A6)/hai_T7\31"t:Rd/M<#[-KVJQ;lh%8f\C^_LpthKjcQR'YPWErUK]7(EZlFR6otn6l$m6CcH2Qdh\;CYl)BC)ll5'(&C33`]"<jcnN3.SiMkYhT*\E7Fi0'ci5Ll/otR/<DKYBjQ[&qRbCS7?%qhA"0LbiIn!#%^KcU:VN@uA/O79f\BG=R[U?33"`US1c@iIqP%]4g6i'B`H2`(LdYm>&c>2<)hb(B+=ZAG<h=9@GkGQA\Cq)&c^2kb-&%2Z3lq&u1C-cMVS5EMi>-StLMW:f0iUXnQlHcYD\u$")Ik^+[l'cpOGh\37g]Y/X==:uumnLCnT3JLYa>i5t1Mhs;V`qe<_E\\P<$X5\VCio^L"3cQ/PT!6T,YI]6skW'(aU=;KVa#K)B1;l5TmU1U0W&$b,.C,l-QMtO*pT?Eab9^GNEdll4#(1LVR5G'HR=:CUbJ6%rt1L(=fh`'514Z^"slBj`Fuh1)Jfk8l^Z#G\H/#fH&+C1P^_,LkAHXiVYOAd]=BEKYe#2B+bA-j,fq]pg1%qRkTS-1-$GoDsTKn$+B"9)AjqXM-D#dXV64?l`;p4gf.keo6RFlDKZaa1_/pU@72af'[0(H:#R=Z.1CiD?Fpla.2a0Kr0+rN4SU#MjrgD-]Th2`C[`I419A`r+'^HooZ"I/p9ipFWZeeWBpep4I_\o5%9g4Kqk"#i4<XlBG-jMjff[U;V75f\?9:!J;SrLGj7<<LW+iXA$^EDJUu3o:g2BbVI]AYn&c3DNi,$k,UIHb56SobCUM\bS>*]M,h<0RR>npJO<%_!NCNH4FinC0>=Zef^2]K2/I"MIMM:7/6*dkeMp-N`a7H1/<@ScGno"3o'6X-682u'a<gu3o.RTR@0We<_>97*C2`4[hV`ST.f@6BW_1FTPFZ)$FfH%Wq6Tm.c'IRi1d]JZ`N8ul_*#m6+#?ig/$d46%oF>]Zf<T_D5SA<@UK$S&V_I5!\@6ok`I?uSc!Ib`oU]~>endstream
+endobj
+22 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1854
+>>
+stream
+Gatm<D/\/e&H88.E?CB%nO1L&!J[:R>G/bi[#*1=JA9IZfj[=2/kOadIf5:kr"@&D&L0gX<3e&=GP=4Dc]pd_5:l`W.tA.?q"6EFQGRkNXP<!VpeUZA^A)uig*[+mk`>T40\oC=4YsjGYHdJakW9Nm-)L'c[g`3s0#,qMS^7_l>PRj#OBa2YYACAB.9cLLF5tUJh(6om+g5;O"3/+NZbOo6e+8?/BBTpIhX:oCq_'+&/Mmeg$..*#m0F+.*2Z1r.CaD+*I!+^k?J'PnnK<[Ak#k;7Y;+SaW2qZbV46]:&$6@X>AYZ$WlF.f"0^+F(n9Qb6#1Yn[4(IYVhd,5P38=.(J<HdD1+1dm"Um2X3\'P&<pu+#iN$59B\<qR,jGdm<>NFF1kjAg_CKJBpD;8hai$Thgc;c-RTpeH]p<fkWjEQ`q+*o_Ar1A1W*:$S@ULSLD&p)L`[^HRWCc&XIg$TTC*R>SI;oP^C1;$_s]F:1,&:DoBqVF3c@i$G!Hqb.o5q/k;ICEWo\_YbnHeV`2/t#4%mcE^TcKdC.Z;2?kH<1<VQ#Ag/$Tc]cPJ1M$I+<?1`U4!43p,q;do2F+)-M$/HPK@Y?.8C@jT-C8NC%C/`l^cP(J]d.l>UV".C?@Q&[]`#Yq\G_*7drR89]#3\0lbnm.?qg(Y9:\9Q22CWdS+*[/.j[3UOC$MqS9cGnbo+.;D1K%9$SU?[]):4E!n_Aeal[r:n@-L5dbE:*Q=A6ta(e5\c+.n/i+CH&!gB4@,bA7!I/@m2kMc>9RjAj%Yi(73[1rF&:aP6&#b,kfkd8]MM;L,JimB$ngIIGjO615Impl%,`uGm*ZpOVe1J!5J[?H1LASOMOa!I1^.uAW#=Lp?ehE7+l&YeNfph<LmcmfK(g:F^G?c06gK%^?k)[qpK`ZLd/Uj,`7;("N$j_f"`gjbl\ZUW,FNMaurS`NYANE/pTG.YH?8b(s;AN)7,Wo@X()]KQ5Y4ec#8[DuH";3gB-Mrh0#dRJ#iR1Gq)2[DO=4[So)\B"AK.lJMRS)i![]7FL)&jL!-fIEsmFITu.1OdrGEXbA1)ZXDnj=E?XauE2[:%.FU$3`aE2R!OhPH8`0%Wh_q1@`bfn^<j3MYhd2RN?e=h41+pVi\$<YWrq&6$GH#trOBn-/J:R:NS1H)GeH%?C8<XFGu8l[!W]-6827]m&OJiNL$M$Y*K3F]8cP0/>fQ)7m^XW5:l<)deP7oeh#'9qhoB/l^&PL1sF='DTPE<m*NP,r]s!:(T##c?EHg?>Vq[\SUY)L!K&->A3$KS4j6+!SG!U8f&nLU@r38U9YU@a<DQp*8nm97=r>'8n*WXEj+(-qgrZRV+md8kN)GP!*SU.%9OO9[6.liZQqOI,'DNa[Ro75TC#la8@HX'8bKY;:[;RdLaWga7Bt'Oq..W9EMgYQdBtXpVe<,[5oQ58NWq95;n*P513=L-UekJCo`[:S@B]?YRN.\BY=7K(k<>Km=3<aG!ro5X4t#*mYLsn=gi".#KrOdKD/[HK@]mtI2@';>6&N3;2P-Km4$#`-(2\:Dp\!m]fb+Vb=)p/T81iWq*^de6a3)=);-3``O`j7C<ktQ^7!^;e#XbZkn>3gRp'TfIX\Gi<dZPsUXMM#\ZTCl-L9\0=<9)aP!g)i-BU`Q2j+LsVDOceAY2eE=%jB_J2/ao:Ko0da#$m$:%]6j<_<ZO.qr[o'As?KY,e=`=2KrgMDcjgINZEGb-nSTU4Wi9!K]d!W]CKR_=_K=U=Q39J9$FQVUs>qm6+sc4m5r_X1+`.QprC(]33d\5V#PT=h4+gCiLIY<TL,j3lTuL"h_(YaKn,CO^:$pTZ.eY1LBukuJ!%C(!!~>endstream
+endobj
+23 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1760
+>>
+stream
+Gatm<9lo&I&A@C2m*Y(9.S3JZp8)83Ou1Wu&gs.EiX8/W.)[C)!2*<afCo<A'KK3e>0_@^p-9boiU,C/9?.b*-ha087<C\hhqu?d-T%AmSG#mM^8KT3hR?hHm2So8*0'e.D"$1B>T[7ImJ=:ujB$KO_h%>1##;:>IR8&8cVN?\B1\`0=Ntts(\G.u3L@$`F8:Eb?YTA+Mgk7GdNmL8g'a!a&__=)4a`bO(co9ea(+ZFIn+L%2,c$&W'A#_^=b\ok&@<2+O-ae;UoA&Qi/&0;>TTt?*dfmf0D5:;<N]HIS`%?@JL3He'YA;=K8brp__[9Mu+lp)@ZJ;6^gX,G5Z-D)YE8i!./AC.^P*_b738WI=FXbd7#HaZ3qF4%-Et'YLL6/@;1;&<Kf"j"[6s8"YH"@/`jX.aHWC/<Y\2ABI1#"ZP#o?Ke*uZUhFubU`p696W71!/1"cY"WQmV\C?U?"_1EY>j3$s;FjMsh?#WE<9(gZW4l@>>Nf>kgZ!fk%"OL<Sf_+u]OZD?4eQM([g7p>'BKh/dUT68o]NI8aqaD^<'u8CP!r([$e&bn7V$c2PQ[ogO<]%j@9YBg$Ln\9[G*"/_fE/,"mT-RhEjDiFf)/`<u=?0ho?HdN$n#hdjcR/dq9FB^&CN$bE?'AIV^ihdcr>q2HUha3.?1RB2&%J=GRreIU]"1;r2.Wh2e-?ogd.!Oe&R"g;?V@469L>9ouu/''(Glb3;6=l,h.NX!#l7JYb-M65^;-m3OM@;)+?Ga'RPB%PI:YD;)[XCD5!73fZtUH7O(@eZDu!p#S<&-k_9j0bi1u:GGft0Y_/[dV]fXURW<fiPJ?Fj*l#6Iq^r[f:SqT@@uCV9;PMUQJTeWg7A++Qk`[Yej0bBkR`<T@@f[6THk1D-UL1<^_$?.*Y$qrTd2pdB<RK<?t7c$k6.sb.SoP3=Ne96G;$hg`BfO$=T<!Hn[`EL"Fa<[iS<./>0C;E6<cI:RImUuVNe@2(m4jH%0OmJ1SqPs$t:5NG$#88j:_cM=5TcNY1OlM'!+.b)rm8,<VAG$D#f(*D@<\P(%B+&ST+Q+]C+/h=#iKG2=J3-5M!7RT;:sn8)r&Sj$s@T"^:\L%Gp&8HVGJkVH$PGE8=^^b3(+<YR`a0/;Gfm0Xs)%!"He48OVgGges2Wipkk^5j=Gn?IGrk>4=B#2I0+!EaCCWDFs]sZrQol#[VO+3nTFTE>%\/5O#L]3\4<ig0j?II)"322t/U_Db5!cD7(:[#Msu9&;n\qJU<WaIRO]mHV$lT.sP6E23\UM.)3r8S"I.Ljf4KOn9Z7U%XlD-(OiXqg/'OC*jims(pp35fj``,^L>`I!O8A'F?*;^FnC?LV"$67AuF@cYndLip1MZ`RX0u#coI!uD.SR0:`;ErTSSfm)'8aV'ZS4Q\=HGKl)J.$EgpW&HTm;S?I6jA4$PjpJ+YRSU@TZ$^Q2K<&j=.$]?"d<PWA-=Mb[9SnVUM7)rp4cFhXurSA)E740.j($.*[3`3SCE1G%iL.YF7gMT(X"<QS_/$@qnUqhDJ!!rjJ&b7US)3Tt,eM8tCa+Wd1N&4rMniXK17NEO9tg%t^_6Tg<&V<Fr71E5s)f5WTHGHSVha*J[k:Wg3VP;,$W>?BQ/1CaHB$&_P*F($bH5k8`Wgi`Q^Md4-nc=b"5mTSVTYp>?**]1(R%6f.4Coj#G;Hh/=7WU5hVAlCa#VJl$<IEh58R9G(^NasA]',<cdqshZ)cP(F\T[kRURN=trW@#A!X8~>endstream
+endobj
+24 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 845
+>>
+stream
+Gatm9;/ao;&:X)O\Ao)]=e)<_4)#36D7i\%BESt5MjI`hZc!?^ZS)0%c>L730O,GC;BfK7q`]N(S]r:SL\Z-k"'jo+ElEPTO=u0];%!+\\BK<WH>GZ!)abAg1mqgXO6KZ*QEc3=['lh_$*`&p8R.;TBa"68_3><6Z[u7FXs!0O1hT=?ItdfcKD@dY'<';(hEX4j8@B)!`1F+:g9H5.S7NT5[!N_ipIa$?qjgrb,g?-a+U:qp^EYO!3npgijm0f!/SQ_a7^MPl!4@o_DX7*1S5?$DpMTU_*X0$9"]S,9A7JDHo39<oQY&g"%,`/kcB_3gX'j&M$?"4n&LHPtEWI^b@[R-J4_L)=\6eM:rA'`T9&lNlM-P?Ebr,kZn4ra@@JZmsQYQ:-9j:a&A3Yiu^/=2tr::!l-:p%;*.EpSGSC+hY"0f4>iNIBKRleF?m2JQ*PBe:$MkEPOl9gj64U'e\lpNa.EP_pE<I&o8Q$ZBCdAeWOr14Qm6DlIBIl[gX7A_oEt#BNdpj<*RTK-dCSbsoJM%e"K0"_>^=@TS:g0lb.GRu^<n)HuQ<6"D@1.dPe0ccB"u-nd+\nfnjd`K]OG.@=JO7nHP)^<E]]opUdTNZM>/u34%?j?3Ijh)YJF?):[cH#GE<Ut@Enb>^R]iNk/P-c@EQY$'1Bnr,8JGjPh\geY4h)=]S:.Ot05-/M:WHTDm#\-s]VBn=%r@)1#T>R^6*-s,a.&T':4]DQ.ZoaD4$Gp(BrHSG5-N@"Dbfe]<U&_U:(0W<bTUILkE)$@_+)n=+mIqVS$%k1Ep=$F9U)Ds#3f*fTiMQ&^j!#H9&f[a>%ud*nf16br;],B*kh~>endstream
+endobj
+25 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1801
+>>
+stream
+Gatm<@;jmY&H/2-ESomeYp.;Um0"hl2JpfK/_2ardgsG&7Qss[,Z5qf\Gl4a;O6\s.\1+$!@+9eo%i?<G=P(5dO0(mBaO9@$HM<A6nq@kLk`_WVB=aPo\fU4[%9:L_!#;sPA)Ri@qp!KO%#P'ka@T7M<T;pb/CI1]<"jK/d3MuE1O2*jGVg/f8F^[6/WsIJfFXJ&>oKEoQRq/-%17!FqP#n]CGjiAC?G:$;e*!6udnj;="kI]k>$^9Q;CWKF<nWbTT)]WKCq=8B=\3U>E\<AW?gmZA+n*+]PBq9F[5/@<a8[Jd\C)b_dIGZW%l<:Z4X6eopRF]AH>6qM824Bb%+/AnVj;MT]0ja\7`e`D]f&V'O;;or4:F,RR"H`!fBBmn(KfPM5+E$K-i0UXFmR3>W'M8H/SJZ#?7ZZdHGgQpp&?;a?15f0g22E_1'[.1[lH+']aZ7q.e:*.lmb)>N,9-i;hE$`"jK@<aOE-SSi/_4F:gaOmIZrJDX[-3ZibLX1DI]k.W7ZU9)BW,Og$NJK>995'#EX@e&5!.ZX<(YZ6)KPjF`'HfsUC/94emkO_(^UB$V6FAPmHEFDMW>%6^@H4Z1?_D+c57Zqi9as>(d>4=RTg4fPfSi$hTQ'rRV)E9>bE=XGN7Aj2%,TQH\Uq":V,P>_YABD2m+^@BgNut$..l(&RP]c0"0iFbA5[tAa-;$X8B#:6B#$>)gE^]Mq`0VK>kud]qn^FT^f(k"V2_?o,MjtNMeCVQWY?oQ#d.hDeI`[,;&mD0(C$uNZ=:pVA5ICT7T(Fn4VfQ(r,BR$oAO"dNm_,tG$o?E2Go@c>,GeuM:QtZ7RaWEUfGPN,.gl&\!c?s2OmI4O6pb#f56O)%L$o!3R#kdP1H?Kk>&p7'#Yg$0cUXknYbKg+Fq5.Ac.c4rphe>o!.&NK8!pn/Jg"+2'$Sn/W/E*h<MBkKsqW%lh%.6VFBkZbVia#c4#dJ2(GrXH,G=l+I>$JE5UXBn8cphXfI'.<8Blg(rtr!jV4MaUp63"%E]#UZZ=+Ic'"uOPSkc##QBZQUCt</:T@1Vn(F8LMC%MT)(NM3G<*Q-F)".Brbo^,SR]13BX'dfYY3Q"PORh2*X8cY]P-%R>CbR,*o:XVGDBpEEXK[an\Nl,+o2lO,J/*8`8,HI]/7KVJ?@n^&1B<]h7el%+Je4B60J`TZ_&7a\JgDhXSCb&B`)M@_\@oJD4R,GU]c\`S+XMop2,!JG<^*OM.guD9dOBhVsG,;T2^H:a,1qc@'&%%HoR'&is",HAX,1:,cR=7>28Oal2b%apR(.eI^Yku7SW,UH[P-;<GgO*A6u4!<)!kT*sshqa'&k65a0KnH.!3S$9R]-n]@@a96VR*!F0W&"g2B54'V@"5+[_eD>q;B;"K%K]m49>?`4^/.p;h7EOnEJR]7:.'GZpsDG7M%?$AI_@%)g+C6caZ=,]Y5Q]7_eI$+9\!4P:k7\^`?CT*;plu<ZP2#6HPe:I3e`/<b)KfY6*[BfH<);V,1eR$7JpuT;?;Kuj'>)J)#cZ2]t]<'L/RPf7_^S/@)O]*EfE_cEW(4Pa]G7PE7j#oP)m!i(kZL99A,N7\cE7r!ZWfY4Djjl308h/k-*ft_*NF9elhtp:r)KoDFU=`ZrJ+5kc[=^I)d9VdR0<j@55s;j_m_Yp`P$6JKJ-B5?EgHhsb+`U`E\&]rFP6)Pk^):#8U'!^1W)-@ARs#*kn[f/j&/q^kB'3qr5LbG&_+C8V9gQMTUW8^[[d_2kDH#%QT\1_50#XX!8c19_Xd;TR*]e(ea7bbE:=qjQkch~>endstream
+endobj
+26 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1644
+>>
+stream
+Gatm<?'!]!'RcT\EVGHq-jq2G9]+RgN`rEWSShS1/+MUj*9(gEVmZ]F^Y`N_%+$c,726Gei5FfMHgeMcN+e%!aM2@Fd@1=<EBBml6ApFbkochA#PrL]p%<(LXdmXMHL2L.g<a3UX"2u6q`Vb7m]+0GLAj2iHV/3:Ra(%ceIC!_O=`J@D4.c*_DbKA<jeAuAm8;5c7C3K@R:u+S!$qKCJOf4iL-N/X-sk_>Slh/<4Z\l$X3HuMr1M#$Y-ShBWY*OYe,c(52p])`[lt$OZX`)q[TdL.80u?g="I44R`.Y)^V:;Zk6;,"dT^8)Qb&Lbq-n],nUE#@:E5?gs&kl,5t2**lgH90?*ooDTQ^Sja\I/b5#3pa-?tDg(NqcrCP(8A:TL_8===#f)1[BXg$P>`,mu+4-8?+:ZgX4C%+pNP@Nt$JH"[^(NMr_78\$KV58NN/_AF`M?4YiG8m+r.6N&TeIGNuQ@JBF9^b1+'7"rIRNq,u[r1r)*rUGg5%rX0Nu>,N"S1=<7?l!;p&*EqE7=)0Vmb84SJ,2m6.qF2bg#lJ]KPI).[cunZaJ_[//+:7"LZYtD.tl23NZH7qT`]YMtgOZoAQk_.p![88RRfVj[!8Xhr*7/AET\T-GM5Q1aFcd,4@:`oKKe/`Hi`.Y2%5;T[2$$W)HM:1h?0I)G\`H_=U.-:<'VZrTDmW4J3WF+>?WupN<7<AMS=q66FQ,9V\"W&/54KdH6uFPM#SKWEX=O_kbCrRgD>g`jBmKZYnT$!<eNpide@5[8fs4r+*.RW>e;U3ePiEm/a;M/aUai2r+O_e=Xf*\8G&R8erW6JPDBqg7`.7VfLObi"6OgEIgV7Vt95t0k:.KM.9kK")7]f(6-:$0d6?ZHE@D*g8cM*cJS^QmcWIs/%LN>SP9@RM7QBYko__`T<$.W5bH5:@/]biofGB/%"2#qf4JU$,h#<tgGr$bc)L%Ekj;(6U(EaNDS52Y)n=Z.B'I[n*7RWO]5a(137<#kjl?X7Z=dP@dd#:upoo,XY]+Yg&O5/@l"GB'epG[#<BN,D4cr#W=giJP`D(n;]E5?"YWq>_dc#G4S1)8Eok4mkOj=d$A3fV5L-B\Ta$?Oe^ALOrPsX=NO+3jQ?Gck_6%$$Ja0Y*ahIju-F(W%d)o"7p`O0TcEaBdIdOJFA/W/qhEW&2S`mZ=tB2TY,<WRgU36]/S59P/QV$qRH>\b>TjZX.]+tIBFN5*39>+F!+EB:fRTU1`TF&pF'MR&j)hl<>f(9c.6jVqNY];?C#0lHp0j5Hsu**qL$VbRSM'kG$YprFcX8-(sbB`t#3e]L!\K#<L:M"`hgmjp5qZo!IeWc/SRp+!K8PJI:I&YkTXdi7uTnjYd60k&0d_ShkA-J)#U<j'5DVBC@"A)UG3\peW7%!GGjjf5^'HuOJQ-F<J-3J-A<cUu=,U9&B**"[a>I<R^up<C[a1>$H6*#3():uWR5c=Cs8jaU/c\"`:#nP,r"k<!I1^#?J$]..)hiMXnRYRrSK)*<<n:WE!iB?"JH`m9Uir8k/L2aCN@hN1jkG-17UY(^jO!&S:p!fu/e$;P9I8ZDYJriVI^QmGbm'#>l9L-PY4Yha*YIR]*Lp`s=B])51aCg5T^]@F$g)]7]-]>W+Is3b?1ao~>endstream
+endobj
+xref
+0 27
+0000000000 65535 f 
+0000000073 00000 n 
+0000000114 00000 n 
+0000000221 00000 n 
+0000000333 00000 n 
+0000000528 00000 n 
+0000000723 00000 n 
+0000000918 00000 n 
+0000001113 00000 n 
+0000001308 00000 n 
+0000001503 00000 n 
+0000001699 00000 n 
+0000001895 00000 n 
+0000002091 00000 n 
+0000002287 00000 n 
+0000002357 00000 n 
+0000002641 00000 n 
+0000002760 00000 n 
+0000004431 00000 n 
+0000006245 00000 n 
+0000008236 00000 n 
+0000009063 00000 n 
+0000010849 00000 n 
+0000012795 00000 n 
+0000014647 00000 n 
+0000015583 00000 n 
+0000017476 00000 n 
+trailer
+<<
+/ID 
+[<f697245e10754fb95d49b8eec5a1ffc7><f697245e10754fb95d49b8eec5a1ffc7>]
+% ReportLab generated PDF document -- digest (http://www.reportlab.com)
+
+/Info 15 0 R
+/Root 14 0 R
+/Size 27
+>>
+startxref
+19212
+%%EOF
